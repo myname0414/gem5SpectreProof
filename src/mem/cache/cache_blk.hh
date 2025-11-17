@@ -205,6 +205,7 @@ class CacheBlk : public TaggedEntry
 
         clearPrefetched();
         clearCoherenceBits(AllBits);
+        clearSpeculativeTags(); 
 
         setTaskId(context_switch_task_id::Unknown);
         setPartitionId(std::numeric_limits<uint64_t>::max());
@@ -232,6 +233,58 @@ class CacheBlk : public TaggedEntry
      * @param bits The coherence bits to be cleared.
      */
     void clearCoherenceBits(unsigned bits) { coherence &= ~bits; }
+
+    /** 
+     * Check if Tag 0 is speculative
+     */
+    bool isSpeculativeTag0() {
+        return _speculative_0;
+    }
+    
+    /** 
+     * Check if Tag 1 is speculative
+     */
+    bool isSpeculativeTag1() {
+        return _speculative_1;
+    }
+
+    /**
+     * Clear the speculative tag 0.
+     */
+    void clearSpeculativeTag0(){ 
+        _speculative_0 = false;
+    } 
+
+    /**
+     * Clear the speculative tag 1.
+     */
+    void clearSpeculativeTag1(){ 
+        _speculative_1 = false;
+    } 
+
+    /**
+     * Clear the speculative tags.
+     */
+     void clearSpeculativeTags(){ 
+        clearSpeculativeTag0();
+        clearSpeculativeTag1();
+    }
+
+    /**
+    * Set the speculative tag 0.
+    */
+    void setSpeculativeTag0()
+    {
+        _speculative_0 = true;
+    }
+
+    /**
+    * Set the speculative tag 1
+    */
+    void setSpeculativeTag1()
+    {
+        _speculative_1 = true;
+    }
 
     /**
      * Checks the given coherence bits are set.
@@ -298,6 +351,10 @@ class CacheBlk : public TaggedEntry
 
     /** Get the number of references to this block since insertion. */
     void increaseRefCount() { _refCount++; }
+
+    /**  Get the speculative bits. */
+    bool getSpec0() { return _speculative_0; }
+    bool getSpec1() { return _speculative_1; }
 
     /**
      * Get the block's age, that is, the number of ticks since its insertion.
@@ -506,6 +563,10 @@ class CacheBlk : public TaggedEntry
 
     /** Whether this block is an unaccessed hardware prefetch. */
     bool _prefetched = 0;
+    
+    // *new code* //
+    bool _speculative_0 = false;
+    bool _speculative_1 = false;
 };
 
 /**

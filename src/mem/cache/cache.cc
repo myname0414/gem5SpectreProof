@@ -56,11 +56,11 @@
 #include "debug/CacheTags.hh"
 #include "debug/CacheVerbose.hh"
 #include "enums/Clusivity.hh"
-#include "mem/cache/cache_blk.hh"
+#include "mem/cache/cache_blk.hh" // Each cache_blk is modified to have a speculative mask that tracks new and old generations of branches
 #include "mem/cache/mshr.hh"
 #include "mem/cache/tags/base.hh"
 #include "mem/cache/write_queue_entry.hh"
-#include "mem/request.hh"
+#include "mem/request.hh" // Add new request methods to determine, flag, and clear speculation to help track new and old generation of branches
 #include "params/Cache.hh"
 
 namespace gem5
@@ -73,6 +73,7 @@ Cache::Cache(const CacheParams &p)
     assert(p.tags);
     assert(p.replacement_policy);
 }
+
 
 void
 Cache::satisfyRequest(PacketPtr pkt, CacheBlk *blk,

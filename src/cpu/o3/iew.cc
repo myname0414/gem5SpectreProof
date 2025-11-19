@@ -1288,6 +1288,8 @@ IEW::executeInsts()
                         tid, inst->seqNum, inst->pcState());
                 // If incorrect, then signal the ROB that it must be squashed.
                 squashDueToBranch(inst, tid);
+                // Use this function to invalidate speculative cache lines after a branch mispredict
+                
 
                 ppMispredict->notify(inst);
 
@@ -1296,6 +1298,11 @@ IEW::executeInsts()
                 } else {
                     iewStats.predictedNotTakenIncorrect++;
                 }
+            } else if (inst->isCondControl() && !inst->mispredicted()) {
+                // Correctly predicted
+                
+
+                
             } else if (ldstQueue.violation(tid)) {
                 assert(inst->isMemRef());
                 // If there was an ordering violation, then get the

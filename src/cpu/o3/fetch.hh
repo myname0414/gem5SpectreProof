@@ -180,6 +180,7 @@ class Fetch
         IcacheWaitResponse,
         IcacheWaitRetry,
         IcacheAccessComplete,
+        BranchStall,
         NoGoodAddr
     };
 
@@ -529,6 +530,14 @@ class Fetch
 
     /** Event used to delay fault generation of translation faults */
     FinishTranslationEvent finishTranslationEvent;
+
+    // Flags whether we're in a speculative state or not
+    int specBranch1[MaxThreads];
+    int specBranch2[MaxThreads];
+
+    // Sequence number of branch that set specBranch
+    InstSeqNum specBranch1SeqNum[MaxThreads];
+    InstSeqNum specBranch2SeqNum[MaxThreads];
 
   protected:
     struct FetchStatGroup : public statistics::Group

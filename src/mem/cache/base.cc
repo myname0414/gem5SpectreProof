@@ -1171,6 +1171,12 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         // all read responses have a data payload
         assert(pkt->hasRespData());
         pkt->setDataFromBlock(blk->data, blkSize);
+        if (pkt->getFlagSpecTag1() == 1) {
+            blk->setSpeculativeTag0();
+        }
+        if (pkt->getFlagSpecTag2() == 1) {
+            blk->setSpeculativeTag1();
+        }
     } else if (pkt->isUpgrade()) {
         // sanity check
         assert(!pkt->hasSharers());

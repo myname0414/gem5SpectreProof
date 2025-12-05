@@ -404,6 +404,10 @@ class Packet : public Printable, public Extensible<Packet>
     // Quality of Service priority value
     uint8_t _qosValue;
 
+    // Adding the speculative bits for the packet
+    int flag_specTag1;
+    int flag_specTag2;
+
     // hardware transactional memory
 
     /**
@@ -816,6 +820,16 @@ class Packet : public Printable, public Extensible<Packet>
 
     unsigned getSize() const  { assert(flags.isSet(VALID_SIZE)); return size; }
 
+    int getFlagSpecTag1()
+    {
+        return flag_specTag1;
+    }
+
+    int getFlagSpecTag2()
+    {
+        return flag_specTag2;
+    }
+
     /**
      * Get address range to which this packet belongs.
      *
@@ -874,14 +888,16 @@ class Packet : public Printable, public Extensible<Packet>
      * first, but the Requests's physical address and size fields need
      * not be valid. The command must be supplied.
      */
-    Packet(const RequestPtr &_req, MemCmd _cmd)
+    Packet(const RequestPtr &_req, MemCmd _cmd, int specTag1, int specTag2)
         :  cmd(_cmd), id((PacketId)_req.get()), req(_req),
            data(nullptr), addr(0), _isSecure(false), size(0),
            _qosValue(0),
            htmReturnReason(HtmCacheFailure::NO_FAIL),
            htmTransactionUid(0),
            headerDelay(0), snoopDelay(0),
-           payloadDelay(0), senderState(NULL)
+           payloadDelay(0), senderState(NULL),
+           flag_specTag1(0),
+           flag_specTag2(0)
     {
         flags.clear();
         if (req->hasPaddr()) {
@@ -907,6 +923,13 @@ class Packet : public Printable, public Extensible<Packet>
         if (req->hasSize()) {
             size = req->getSize();
             flags.set(VALID_SIZE);
+        }
+
+        if (specTag1 == 1) {
+            flag_specTag1 = 1;
+        }
+        if (specTag2 == 1) {
+            flag_specTag2 = 1;
         }
     }
 
@@ -1035,9 +1058,9 @@ class Packet : public Printable, public Extensible<Packet>
      * Fine-tune the MemCmd type if it's not a vanilla read or write.
      */
     static PacketPtr
-    createRead(const RequestPtr &req)
+    createRead(const RequestPtr &req, int specTag1, int specTag2)
     {
-        return new Packet(req, makeReadCmd(req));
+        return new Packet(req, makeReadCmd(req), specTag1, specTag2);
     }
 
     static PacketPtr

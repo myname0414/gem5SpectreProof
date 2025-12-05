@@ -993,6 +993,9 @@ class DynInst : public ExecContext, public RefCounted
     // hardware transactional memory
     uint64_t htmUid = -1;
     uint64_t htmDepth = 0;
+    uint64_t specTag1 = 0;
+    uint64_t specTag2 = 0;
+
 
   public:
 #if TRACING_ON
@@ -1012,6 +1015,13 @@ class DynInst : public ExecContext, public RefCounted
     /* Values used by LoadToUse stat */
     Tick firstIssue = -1;
     Tick lastWakeDependents = -1;
+
+    uint64_t getSpecTag1() const { return specTag1; }
+    void setSpecTag1(uint64_t tag) { specTag1 = tag; }
+
+    uint64_t getSpecTag2() const { return specTag2; }
+    void setSpecTag2(uint64_t tag) { specTag2 = tag; }
+
 
     /** Reads a misc. register, including any side-effects the read
      * might have as defined by the architecture.

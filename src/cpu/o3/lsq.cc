@@ -1191,7 +1191,7 @@ LSQ::SplitDataRequest::recvTimingResp(PacketPtr pkt)
         _port.completeDataAccess(resp);
         delete resp;
     }
-    _hasStaleTranslation = false;
+    _hasStaleTranslation = false;s
     return true;
 }
 
@@ -1202,7 +1202,7 @@ LSQ::SingleDataRequest::buildPackets()
     if (_packets.size() == 0) {
         _packets.push_back(
                 isLoad()
-                    ?  Packet::createRead(req())
+                    ?  Packet::createRead(req(), _inst->getSpecTag1, )
                     :  Packet::createWrite(req()));
         _packets.back()->dataStatic(_inst->memData);
         _packets.back()->senderState = this;

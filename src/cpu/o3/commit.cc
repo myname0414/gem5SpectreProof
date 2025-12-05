@@ -770,6 +770,13 @@ Commit::commit()
                     tid,
                     fromIEW->mispredictInst[tid]->pcState().instAddr(),
                     fromIEW->squashedSeqNum[tid]);
+
+                    //573 squash cache lines
+                    // Get the spec tags from the mispredicted instruction to figure out which lines to flush
+                    int tag1 = fromIEW->mispredictInst[tid]->getSpecTag1();
+                    int tag2 = fromIEW->mispredictInst[tid]->getSpecTag2();
+
+                    //TODO: actually flush here
             } else {
                 DPRINTF(Commit,
                     "[tid:%i] Squashing due to order violation [sn:%llu]\n",
@@ -965,6 +972,12 @@ Commit::commitInsts()
                     ->committedInstType[head_inst->opClass()]++;
                 stats.committedInstType[tid][head_inst->opClass()]++;
                 ppCommit->notify(head_inst);
+
+                // 573 branch clear
+                // if (head_inst->isControl()) {
+                //     ThreadID tid = head_inst->threadNumber;
+                
+                // }
 
                 // hardware transactional memory
 

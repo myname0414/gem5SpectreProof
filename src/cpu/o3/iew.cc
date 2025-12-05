@@ -1298,11 +1298,6 @@ IEW::executeInsts()
                 } else {
                     iewStats.predictedNotTakenIncorrect++;
                 }
-            } else if (inst->isCondControl() && !inst->mispredicted()) {
-                // Correctly predicted
-                
-
-                
             } else if (ldstQueue.violation(tid)) {
                 assert(inst->isMemRef());
                 // If there was an ordering violation, then get the

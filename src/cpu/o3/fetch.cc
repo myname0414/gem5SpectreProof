@@ -284,6 +284,10 @@ Fetch::clearStates(ThreadID tid)
     fetchBufferValid[tid] = false;
     fetchQueue[tid].clear();
 
+    specBranch1[tid] = 0;
+    specBranch2[tid] = 0;
+    specBranch1SeqNum[tid] = 0;
+    specBranch2SeqNum[tid] = 0;
     // TODO not sure what to do with priorityList for now
     // priorityList.push_back(tid);
 
@@ -323,6 +327,11 @@ Fetch::resetStage()
         fetchQueue[tid].clear();
 
         priorityList.push_back(tid);
+
+        specBranch1[tid] = 0;
+        specBranch2[tid] = 0;
+        specBranch1SeqNum[tid] = 0;
+        specBranch2SeqNum[tid] = 0;
     }
 
     wroteToTimeBuffer = false;
@@ -495,17 +504,41 @@ Fetch::lookupAndUpdateNextPC(const DynInstPtr &inst, PCStateBase &next_pc)
     // A bit of a misnomer...next_PC is actually the current PC until
     // this function updates it.
     bool predict_taken;
+    
+    ThreadID tid = inst->threadNumber;
 
+    //if it's not a branch
     if (!inst->isControl()) {
         inst->staticInst->advancePC(next_pc);
         inst->setPredTarg(next_pc);
         inst->setPredTaken(false);
+
+        //update the speculative tags based on whatevere happened previously
+        inst->setSpecTag1(specBranch1[tid]);
+        inst->setSpecTag2(specBranch2[tid]);
         return false;
     }
 
-    ThreadID tid = inst->threadNumber;
-    predict_taken = branchPred->predict(inst->staticInst, inst->seqNum,
-                                        next_pc, tid);
+    // update whether or not we're in a speculative state
+    // if there is a nested branch need to stall
+    if(specBranch2[tid]){
+        //dont setPredTarg and predTake and advancePC like with non branch instr since you're not finishing the instr your stalling
+        fetchStatus[tid] = BranchStall;
+        return false;
+    }else if(specBranch1[tid]){ //there's only one branch can add a second nested branch
+        specBranch2[tid] = 1;
+        specBranch2SeqNum[tid] = inst->seqNum; // need to remember what branch this is
+    }else{ //no branches say that this is the first branch
+        specBranch1[tid] = 1;
+        specBranch1SeqNum[tid] = inst->seqNum; // need to remember what branch this is
+    }
+
+    // update the spec tags of the branch instruction
+    inst->setSpecTag1(specBranch1[tid]);
+    inst->setSpecTag2(specBranch2[tid]);
+
+    predict_taken = branchPred->predict(inst->staticInst, inst->seqNum, next_pc, tid);
+
 
     if (predict_taken) {
         DPRINTF(Fetch, "[tid:%i] [sn:%llu] Branch at PC %#x "
@@ -930,6 +963,13 @@ Fetch::checkSignalsAndUpdate(ThreadID tid)
 
         DPRINTF(Fetch, "[tid:%i] Squashing instructions due to squash "
                 "from commit.\n",tid);
+        
+        // clear speculative state on squash
+        specBranch1[tid] = 0;
+        specBranch2[tid] = 0;
+        specBranch1SeqNum[tid] = 0;
+        specBranch2SeqNum[tid] = 0;
+
         // In any case, squash.
         squash(*fromCommit->commitInfo[tid].pc,
                fromCommit->commitInfo[tid].doneSeqNum,
@@ -953,12 +993,30 @@ Fetch::checkSignalsAndUpdate(ThreadID tid)
         // Update the branch predictor if it wasn't a squashed instruction
         // that was broadcasted.
         branchPred->update(fromCommit->commitInfo[tid].doneSeqNum, tid);
+
+        InstSeqNum committed_sn = fromCommit->commitInfo[tid].doneSeqNum;
+
+        // Clear specBranch1 if that branch has committed
+        if (specBranch1[tid] && committed_sn >= specBranch1SeqNum[tid]) {
+            specBranch1[tid] = 0;
+        }
+        
+        // Clear specBranch2 if that branch has committed
+        if (specBranch2[tid] && committed_sn >= specBranch2SeqNum[tid]) {
+            specBranch2[tid] = 0;
+        }
     }
 
     // Check squash signals from decode.
     if (fromDecode->decodeInfo[tid].squash) {
         DPRINTF(Fetch, "[tid:%i] Squashing instructions due to squash "
                 "from decode.\n",tid);
+
+        //clear speculative state on squash from decode
+        specBranch1[tid] = 0;
+        specBranch2[tid] = 0;
+        specBranch1SeqNum[tid] = 0;
+        specBranch2SeqNum[tid] = 0;
 
         // Update the branch predictor.
         if (fromDecode->decodeInfo[tid].branchMispredict) {
@@ -1029,6 +1087,9 @@ Fetch::buildInst(ThreadID tid, StaticInstPtr staticInst,
     DynInstPtr instruction = new (arrays) DynInst(
             arrays, staticInst, curMacroop, this_pc, next_pc, seq, cpu);
     instruction->setTid(tid);
+    
+    instruction->setSpecTag(specBranch1[tid]); //TODO: Not sure if this is needed here
+    instruction->setSpecTag2(specBranch2[tid]); //TODO: Not sure if this is needed here
 
     instruction->setThreadState(cpu->thread[tid]);
 
@@ -1138,7 +1199,22 @@ Fetch::fetch(bool &status_change)
             return;
         }
     } else {
-        if (fetchStatus[tid] == Idle) {
+
+        // BranchStall gets set in function lookupAndUpdateNextPC if we're 2 branches deep
+        if (fetchStatus[tid] == BranchStall) {
+            if (!specBranch2[tid]) { // if the tags have emptied out we can start running again
+                fetchStatus[tid] = Running;
+
+                // not 100% sure but if this isn't here then you'd return immeditately  
+                // meaning you lose a cycle. so instead fall through to continue fetching.
+                status_change = true; 
+            } else { 
+                ++fetchStats.idleCycles;
+                DPRINTF(Fetch, "[tid:%i] Fetch is stalled!\n", tid);
+            }
+
+        }
+        else if (fetchStatus[tid] == Idle) {
             ++fetchStats.idleCycles;
             DPRINTF(Fetch, "[tid:%i] Fetch is idle!\n", tid);
         }
@@ -1383,6 +1459,7 @@ Fetch::getFetchingThread()
 
         if (fetchStatus[tid] == Running ||
             fetchStatus[tid] == IcacheAccessComplete ||
+            fetchStatus[tid] == BranchStall ||
             fetchStatus[tid] == Idle) {
             return tid;
         } else {

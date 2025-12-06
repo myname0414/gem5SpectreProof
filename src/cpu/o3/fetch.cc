@@ -1088,7 +1088,7 @@ Fetch::buildInst(ThreadID tid, StaticInstPtr staticInst,
             arrays, staticInst, curMacroop, this_pc, next_pc, seq, cpu);
     instruction->setTid(tid);
     
-    instruction->setSpecTag(specBranch1[tid]); //TODO: Not sure if this is needed here
+    instruction->setSpecTag1(specBranch1[tid]); //TODO: Not sure if this is needed here
     instruction->setSpecTag2(specBranch2[tid]); //TODO: Not sure if this is needed here
 
     instruction->setThreadState(cpu->thread[tid]);

@@ -1191,18 +1191,20 @@ LSQ::SplitDataRequest::recvTimingResp(PacketPtr pkt)
         _port.completeDataAccess(resp);
         delete resp;
     }
-    _hasStaleTranslation = false;s
+    _hasStaleTranslation = false;
     return true;
 }
 
 void
 LSQ::SingleDataRequest::buildPackets()
 {
+
+     std::cout << "this is a single data request building packets";
     /* Retries do not create new packets. */
     if (_packets.size() == 0) {
         _packets.push_back(
                 isLoad()
-                    ?  Packet::createRead(req(), _inst->getSpecTag1, )
+                    ?  Packet::createRead(req(), _inst->getSpecTag1(), _inst->getSpecTag2())
                     :  Packet::createWrite(req()));
         _packets.back()->dataStatic(_inst->memData);
         _packets.back()->senderState = this;
@@ -1236,7 +1238,7 @@ LSQ::SplitDataRequest::buildPackets()
     if (_packets.size() == 0) {
         /* New stuff */
         if (isLoad()) {
-            _mainPacket = Packet::createRead(_mainReq);
+            _mainPacket = Packet::createRead(_mainReq, _inst->getSpecTag1(), _inst->getSpecTag2());
             _mainPacket->dataStatic(_inst->memData);
 
             // hardware transactional memory
@@ -1256,7 +1258,7 @@ LSQ::SplitDataRequest::buildPackets()
         }
         for (int i = 0; i < _reqs.size() && _fault[i] == NoFault; i++) {
             RequestPtr req = _reqs[i];
-            PacketPtr pkt = isLoad() ? Packet::createRead(req)
+            PacketPtr pkt = isLoad() ? Packet::createRead(req, _inst->getSpecTag1(), _inst->getSpecTag2())
                                      : Packet::createWrite(req);
             ptrdiff_t offset = req->getVaddr() - base_address;
             if (isLoad()) {

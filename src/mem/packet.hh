@@ -63,6 +63,7 @@
 #include "mem/htm.hh"
 #include "mem/request.hh"
 #include "sim/byteswap.hh"
+#include <iostream>
 
 namespace gem5
 {
@@ -407,6 +408,8 @@ class Packet : public Printable, public Extensible<Packet>
     // Adding the speculative bits for the packet
     int flag_specTag1;
     int flag_specTag2;
+    //int flag_clear;
+    //int flag_invalidate;
 
     // hardware transactional memory
 
@@ -829,6 +832,12 @@ class Packet : public Printable, public Extensible<Packet>
     {
         return flag_specTag2;
     }
+    // int isSpecClear() {
+    //     return flag_clear;
+    // }
+    // int isSpecInvalidate() {
+    //     return flag_invalidate;
+    // }
 
     /**
      * Get address range to which this packet belongs.
@@ -881,6 +890,36 @@ class Packet : public Printable, public Extensible<Packet>
         assert(isLLSC());
         assert(isRead());
         cmd = MemCmd::ReadReq;
+    }
+
+    //OG packet constructor
+    Packet(const RequestPtr &_req, MemCmd _cmd)
+        :  cmd(_cmd), id((PacketId)_req.get()), req(_req),
+        data(nullptr), addr(0), _isSecure(false), size(0),
+        _qosValue(0),
+        htmReturnReason(HtmCacheFailure::NO_FAIL),
+        htmTransactionUid(0),
+        headerDelay(0), snoopDelay(0),
+        payloadDelay(0), senderState(NULL),
+        flag_specTag1(0),
+        flag_specTag2(0)
+        //flag_clear(0),
+        //flag_invalidate(0)
+    {
+        flags.clear();
+        if (req->hasPaddr()) {
+            addr = req->getPaddr();
+            flags.set(VALID_ADDR);
+            _isSecure = req->isSecure();
+        }
+        if (req->isHTMCmd()) {
+            flags.set(VALID_ADDR);
+            assert(addr == 0x0);
+        }
+        if (req->hasSize()) {
+            size = req->getSize();
+            flags.set(VALID_SIZE);
+        }
     }
 
     /**
@@ -1058,15 +1097,16 @@ class Packet : public Printable, public Extensible<Packet>
      * Fine-tune the MemCmd type if it's not a vanilla read or write.
      */
     static PacketPtr
-    createRead(const RequestPtr &req, int specTag1, int specTag2)
+    createRead(const RequestPtr &req, int specTag1 = 0, int specTag2 = 0)
     {
+        std::cout << "creating read Packet" << std::endl;
         return new Packet(req, makeReadCmd(req), specTag1, specTag2);
     }
 
     static PacketPtr
-    createWrite(const RequestPtr &req)
-    {
-        return new Packet(req, makeWriteCmd(req));
+    createWrite(const RequestPtr &req, int specTag1 = 0, int specTag2 = 0)
+    {   
+        return new Packet(req, makeWriteCmd(req), specTag1, specTag2);
     }
 
     /**

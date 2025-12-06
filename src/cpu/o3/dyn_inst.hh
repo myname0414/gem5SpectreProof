@@ -63,6 +63,7 @@
 #include "cpu/static_inst.hh"
 #include "cpu/translation.hh"
 #include "debug/HtmCpu.hh"
+#include <iostream>
 
 namespace gem5
 {
@@ -1016,11 +1017,23 @@ class DynInst : public ExecContext, public RefCounted
     Tick firstIssue = -1;
     Tick lastWakeDependents = -1;
 
-    uint64_t getSpecTag1() const { return specTag1; }
-    void setSpecTag1(uint64_t tag) { specTag1 = tag; }
+    uint64_t getSpecTag1() const { 
+        std::cout << "getSpectTag1 call" << std::endl;
+        return specTag1; 
+    }
+    void setSpecTag1(uint64_t tag) { 
+        std::cout << "setSpecTag1 call" << std::endl;
+        specTag1 = tag; 
+    }
 
-    uint64_t getSpecTag2() const { return specTag2; }
-    void setSpecTag2(uint64_t tag) { specTag2 = tag; }
+    uint64_t getSpecTag2() const { 
+        std::cout << "getSpectTag2 call" << std::endl;
+        return specTag2; 
+    }
+    void setSpecTag2(uint64_t tag) { 
+        std::cout << "setSpecTag2 call" << std:: endl;
+        specTag2 = tag; 
+    }
 
 
     /** Reads a misc. register, including any side-effects the read

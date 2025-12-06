@@ -776,6 +776,8 @@ Commit::commit()
                     int tag1 = fromIEW->mispredictInst[tid]->getSpecTag1();
                     int tag2 = fromIEW->mispredictInst[tid]->getSpecTag2();
 
+                    
+
                     //TODO: actually flush here
             } else {
                 DPRINTF(Commit,

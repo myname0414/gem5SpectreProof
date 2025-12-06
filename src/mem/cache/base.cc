@@ -1163,7 +1163,27 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         // this cache before knowing the store will fail.
         blk->setCoherenceBits(CacheBlk::DirtyBit);
         DPRINTF(CacheVerbose, "%s for %s (write)\n", __func__, pkt->print());
-    } else if (pkt->isRead()) {
+    } 
+    /*
+    else if (pkt->isSpecClear()) {
+        // 573 spec clear logic
+        if (pkt->getFlagSpecTag1()) {
+            //clearAllSpecBit0();
+        }      
+        if (pkt->getFlagSpecTag2()) {
+            //clearAllSpecBit1();
+        }  
+    } else if (pkt->isSpecInvalidate()) {
+        // 573 spec invalidate logic
+        if (pkt->getFlagSpecTag1()) {
+            //invalidateAllSpecBit0();
+        }
+        if (pkt->getFlagSpecTag2()) {
+            //invalidateAllSpecBit1();
+        }
+    } 
+    */
+    else if (pkt->isRead()) {
         if (pkt->isLLSC()) {
             blk->trackLoadLocked(pkt);
         }
@@ -1813,6 +1833,73 @@ BaseCache::memWriteback()
 {
     tags->forEachBlk([this](CacheBlk &blk) { writebackVisitor(blk); });
 }
+// have two clear functions for spec bit 1 and spec bit 2
+// check if specbit1 and 2 are high, if 1 is high, call function 1
+// else check if 2 is high, clear func 2
+// if (bit1 == 1)
+
+/* NEW 573 CODE
+
+void
+BaseCache::clearAllSpecBit0() // Clears every speculative bit 0
+{
+    tags->forEachBlk([this](CacheBlk &blk) { clearSpecBit0(blk); });
+}
+
+void
+BaseCache::clearAllSpecBit1() // Clears every speculative bit 1
+{
+    tags->forEachBlk([this](CacheBlk &blk) { clearSpecBit1(blk); });
+}
+void
+BaseCache::invalidateAllSpecBit0() // Invalidates cache line && clears speculative bit 0
+{
+    tags->forEachBlk([this](CacheBlk &blk) { invalidateSpecBit0(blk); });
+}
+
+void
+BaseCache::invalidateAllSpecBit1() // Invalidates cache line && clears speculative bit 0
+{
+    tags->forEachBlk([this](CacheBlk &blk) { invalidateSpecBit1(blk); });
+}
+
+
+
+    
+void
+BaseCache::clearSpecBit0(CacheBlk &blk) 
+{
+    if (blk.isSpeculativeTag0()) {
+        blk.clearSpeculativeTag0();
+    }
+}
+
+
+void
+BaseCache::clearSpecBit1(CacheBlk &blk) 
+{
+    if (blk.isSpeculativeTag1()) {
+        blk.clearSpeculativeTag1();
+    }
+}
+
+void
+BaseCache::invalidateSpecBit0(CacheBlk &blk) 
+{
+    if (blk.isSpeculativeTag0()) {
+        invalidateBlock(blk);
+    }
+}
+
+
+void
+BaseCache::invalidateSpecBit1(CacheBlk &blk) 
+{
+    if (blk.isSpeculativeTag1()) {
+        invalidateBlock(blk);
+    }
+}
+*/
 
 void
 BaseCache::memInvalidate()

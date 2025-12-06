@@ -213,6 +213,14 @@ struct TimeStruct
         /// the IEW stage.
         bool strictlyOrdered = false; // *I
 
+        bool squashSpecLines;
+        int squashSpecTag1;
+        int squashSpecTag2;
+
+        bool clearSpecLines;
+        int clearSpecTag1;
+        int clearSpecTag2;
+
     };
 
     CommitComm commitInfo[MaxThreads];

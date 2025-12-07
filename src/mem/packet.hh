@@ -412,8 +412,6 @@ class Packet : public Printable, public Extensible<Packet>
     int flag_specTag2;
     int flag_clear;
     int flag_invalidate;
-    int flag_clear;
-    int flag_invalidate;
 
     // hardware transactional memory
 

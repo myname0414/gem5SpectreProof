@@ -408,8 +408,8 @@ class Packet : public Printable, public Extensible<Packet>
     // Adding the speculative bits for the packet
     int flag_specTag1;
     int flag_specTag2;
-    //int flag_clear;
-    //int flag_invalidate;
+    int flag_clear;
+    int flag_invalidate;
 
     // hardware transactional memory
 
@@ -832,12 +832,12 @@ class Packet : public Printable, public Extensible<Packet>
     {
         return flag_specTag2;
     }
-    // int isSpecClear() {
-    //     return flag_clear;
-    // }
-    // int isSpecInvalidate() {
-    //     return flag_invalidate;
-    // }
+    int isSpecClear() {
+        return flag_clear;
+    }
+    int isSpecInvalidate() {
+        return flag_invalidate;
+    }
 
     /**
      * Get address range to which this packet belongs.
@@ -902,9 +902,9 @@ class Packet : public Printable, public Extensible<Packet>
         headerDelay(0), snoopDelay(0),
         payloadDelay(0), senderState(NULL),
         flag_specTag1(0),
-        flag_specTag2(0)
-        //flag_clear(0),
-        //flag_invalidate(0)
+        flag_specTag2(0),
+        flag_clear(0),
+        flag_invalidate(0)
     {
         flags.clear();
         if (req->hasPaddr()) {
@@ -936,7 +936,9 @@ class Packet : public Printable, public Extensible<Packet>
            headerDelay(0), snoopDelay(0),
            payloadDelay(0), senderState(NULL),
            flag_specTag1(0),
-           flag_specTag2(0)
+           flag_specTag2(0),
+           flag_clear(0),
+           flag_invalidate(0)
     {
         flags.clear();
         if (req->hasPaddr()) {
@@ -984,7 +986,11 @@ class Packet : public Printable, public Extensible<Packet>
            htmReturnReason(HtmCacheFailure::NO_FAIL),
            htmTransactionUid(0),
            headerDelay(0),
-           snoopDelay(0), payloadDelay(0), senderState(NULL)
+           snoopDelay(0), payloadDelay(0), senderState(NULL),
+           flag_specTag1(0),
+           flag_specTag2(0),
+           flag_clear(0),
+           flag_invalidate(0)
     {
         flags.clear();
         if (req->hasPaddr()) {
@@ -1015,7 +1021,11 @@ class Packet : public Printable, public Extensible<Packet>
            headerDelay(pkt->headerDelay),
            snoopDelay(0),
            payloadDelay(pkt->payloadDelay),
-           senderState(pkt->senderState)
+           senderState(pkt->senderState),
+           flag_specTag1(0),
+           flag_specTag2(0),
+           flag_clear(0),
+           flag_invalidate(0)
     {
         if (!clear_flags)
             flags.set(pkt->flags & COPY_FLAGS);
@@ -1099,13 +1109,13 @@ class Packet : public Printable, public Extensible<Packet>
     static PacketPtr
     createRead(const RequestPtr &req, int specTag1 = 0, int specTag2 = 0)
     {
-        std::cout << "creating read Packet" << std::endl;
+        //std::cout << "creating read Packet" << std::endl;
         return new Packet(req, makeReadCmd(req), specTag1, specTag2);
     }
 
     static PacketPtr
     createWrite(const RequestPtr &req, int specTag1 = 0, int specTag2 = 0)
-    {   
+    {
         return new Packet(req, makeWriteCmd(req), specTag1, specTag2);
     }
 

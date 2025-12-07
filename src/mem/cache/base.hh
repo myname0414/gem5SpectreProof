@@ -859,6 +859,16 @@ class BaseCache : public ClockedObject
      */
     virtual void memWriteback() override;
 
+    // 573 new code
+    void clearAllSpecBit0();
+    void clearAllSpecBit1();
+    void invalidateAllSpecBit0();
+    void invalidateAllSpecBit1();
+    void clearSpecBit0(CacheBlk &blk);
+    void clearSpecBit1(CacheBlk &blk);
+    void invalidateSpecBit0(CacheBlk &blk);
+    void invalidateSpecBit1(CacheBlk &blk);
+
     /**
      * Invalidates all blocks in the cache.
      *

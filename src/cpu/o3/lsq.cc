@@ -1199,7 +1199,7 @@ void
 LSQ::SingleDataRequest::buildPackets()
 {
 
-     std::cout << "this is a single data request building packets";
+    // std::cout << "this is a single data request building packets";
     /* Retries do not create new packets. */
     if (_packets.size() == 0) {
         _packets.push_back(

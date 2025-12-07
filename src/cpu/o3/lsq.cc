@@ -42,6 +42,8 @@
 #include "cpu/o3/lsq.hh"
 
 #include <algorithm>
+#include <fstream>
+#include <iostream>
 #include <list>
 #include <string>
 
@@ -57,6 +59,8 @@
 #include "debug/LSQ.hh"
 #include "debug/Writeback.hh"
 #include "params/BaseO3CPU.hh"
+
+static std::ofstream lsqLog("lsqcalls.txt");
 
 namespace gem5
 {
@@ -1199,7 +1203,7 @@ void
 LSQ::SingleDataRequest::buildPackets()
 {
 
-    // std::cout << "this is a single data request building packets";
+    lsqLog << "this is a single data request building packets" << std::endl;
     /* Retries do not create new packets. */
     if (_packets.size() == 0) {
         _packets.push_back(
@@ -1234,6 +1238,7 @@ LSQ::SplitDataRequest::buildPackets()
 {
     /* Extra data?? */
     Addr base_address = _addr;
+    lsqLog << "this is a Split Data Request building packets" << std::endl;
 
     if (_packets.size() == 0) {
         /* New stuff */

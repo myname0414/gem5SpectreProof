@@ -418,6 +418,8 @@ IEW::squash(ThreadID tid)
     ldstQueue.squash(fromCommit->commitInfo[tid].doneSeqNum, tid);
     updatedQueues = true;
 
+    // 573 Possible Squashing Location?
+
     // Clear the skid buffer in case it has any data in it.
     DPRINTF(IEW,
             "Removing skidbuffer instructions until "
@@ -695,6 +697,16 @@ IEW::checkSignalsAndUpdate(ThreadID tid)
     //     if so then go to unblocking
     // If status was Squashing
     //     check if squashing is not high.  Switch to running this cycle.
+    // 573 Code
+
+    if (fromCommit->commitInfo[tid].clearSpecLines) {
+        ldstQueue.clearSpecLines(tid, fromCommit->commitInfo[tid].clearInst);
+    }
+
+    if (fromCommit->commitInfo[tid].squashSpecLines)
+    {
+        ldstQueue.squashSpecLines(tid, fromCommit->commitInfo[tid].squashInst);
+    }
 
     if (fromCommit->commitInfo[tid].squash) {
         squash(tid);
@@ -860,6 +872,8 @@ IEW::dispatch(ThreadID tid)
 void
 IEW::dispatchInsts(ThreadID tid)
 {
+    // 573 maybe here for branch taken?
+
     // Obtain instructions from skid buffer if unblocking, or queue from rename
     // otherwise.
     std::queue<DynInstPtr> &insts_to_dispatch =
@@ -1429,8 +1443,12 @@ IEW::tick()
     for (ThreadID tid : *activeThreads) {
         DPRINTF(IEW,"Issue: Processing [tid:%i]\n", tid);
 
+        //573 new code
+
         checkSignalsAndUpdate(tid);
         dispatch(tid);
+
+
     }
 
     if (exeStatus != Squashing) {
@@ -1456,6 +1474,8 @@ IEW::tick()
 
         broadcast_free_entries = true;
     }
+
+    
 
     // Writeback any stores using any leftover bandwidth.
     ldstQueue.writebackStores();

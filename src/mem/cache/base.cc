@@ -1163,16 +1163,16 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         // this cache before knowing the store will fail.
         blk->setCoherenceBits(CacheBlk::DirtyBit);
         DPRINTF(CacheVerbose, "%s for %s (write)\n", __func__, pkt->print());
-    }
-    else if (pkt->isSpecClear()) {
+    } 
+    else if (pkt->getFlagClear()) {
         // 573 spec clear logic
         if (pkt->getFlagSpecTag1()) {
             clearAllSpecBit0();
-        }
+        }      
         if (pkt->getFlagSpecTag2()) {
             clearAllSpecBit1();
-        }
-    } else if (pkt->isSpecInvalidate()) {
+        }  
+    } else if (pkt->getFlagSquash()) {
         // 573 spec invalidate logic
         if (pkt->getFlagSpecTag1()) {
             invalidateAllSpecBit0();
@@ -1180,7 +1180,7 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         if (pkt->getFlagSpecTag2()) {
             invalidateAllSpecBit1();
         }
-    }
+    } 
     else if (pkt->isRead()) {
         if (pkt->isLLSC()) {
             blk->trackLoadLocked(pkt);
@@ -1863,9 +1863,9 @@ BaseCache::invalidateAllSpecBit1() // Invalidates cache line && clears speculati
 
 
 
-
+    
 void
-BaseCache::clearSpecBit0(CacheBlk &blk)
+BaseCache::clearSpecBit0(CacheBlk &blk) 
 {
     if (blk.isSpeculativeTag0()) {
         blk.clearSpeculativeTag0();
@@ -1874,7 +1874,7 @@ BaseCache::clearSpecBit0(CacheBlk &blk)
 
 
 void
-BaseCache::clearSpecBit1(CacheBlk &blk)
+BaseCache::clearSpecBit1(CacheBlk &blk) 
 {
     if (blk.isSpeculativeTag1()) {
         blk.clearSpeculativeTag1();
@@ -1882,7 +1882,7 @@ BaseCache::clearSpecBit1(CacheBlk &blk)
 }
 
 void
-BaseCache::invalidateSpecBit0(CacheBlk &blk)
+BaseCache::invalidateSpecBit0(CacheBlk &blk) 
 {
     if (blk.isSpeculativeTag0()) {
         invalidateBlock(&blk);
@@ -1891,7 +1891,7 @@ BaseCache::invalidateSpecBit0(CacheBlk &blk)
 
 
 void
-BaseCache::invalidateSpecBit1(CacheBlk &blk)
+BaseCache::invalidateSpecBit1(CacheBlk &blk) 
 {
     if (blk.isSpeculativeTag1()) {
         invalidateBlock(&blk);

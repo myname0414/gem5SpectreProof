@@ -1600,6 +1600,17 @@ LSQ::checkStaleTranslations()
     staleTranslationWaitTxnId = 0;
 }
 
+//573 new code
+void
+LSQ::clearSpecLines(TreadID tid, const DynInstPtr& inst){
+    thread[tid].clearSpecLines(inst);
+}
+
+void
+LSQ::squashSpecLines(TreadID tid, const DynInstPtr& inst){
+    thread[tid].squashSpecLines(inst);
+}
+
 Fault
 LSQ::read(LSQRequest* request, ssize_t load_idx)
 {

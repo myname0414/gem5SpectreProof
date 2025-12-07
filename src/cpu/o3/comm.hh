@@ -177,6 +177,9 @@ struct TimeStruct
         /// Instruction that caused the a non-mispredict squash
         DynInstPtr squashInst; // *F
 
+        /// Instruction that correctly predicted and needs to be cleared
+        DynInstPtr clearInst; // *F
+
         /// Hack for now to send back a strictly ordered access to the
         /// IEW stage.
         DynInstPtr strictlyOrderedLoad; // *I
@@ -213,13 +216,9 @@ struct TimeStruct
         /// the IEW stage.
         bool strictlyOrdered = false; // *I
 
-        bool squashSpecLines;
-        int squashSpecTag1;
-        int squashSpecTag2;
-
-        bool clearSpecLines;
-        int clearSpecTag1;
-        int clearSpecTag2;
+        // 573 Changes
+        bool squashSpecLines = false;
+        bool clearSpecLines = false;
 
     };
 

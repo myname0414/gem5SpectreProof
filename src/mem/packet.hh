@@ -49,7 +49,9 @@
 
 #include <bitset>
 #include <cassert>
+#include <fstream>
 #include <initializer_list>
+#include <iostream>
 #include <list>
 
 #include "base/addr_range.hh"
@@ -63,7 +65,6 @@
 #include "mem/htm.hh"
 #include "mem/request.hh"
 #include "sim/byteswap.hh"
-#include <iostream>
 
 namespace gem5
 {
@@ -73,6 +74,7 @@ typedef Packet *PacketPtr;
 typedef uint8_t* PacketDataPtr;
 typedef std::list<PacketPtr> PacketList;
 typedef uint64_t PacketId;
+static std::ofstream packetLog("packetcalls.txt");
 
 class MemCmd
 {
@@ -408,8 +410,8 @@ class Packet : public Printable, public Extensible<Packet>
     // Adding the speculative bits for the packet
     int flag_specTag1;
     int flag_specTag2;
-    //int flag_clear;
-    //int flag_invalidate;
+    int flag_clear;
+    int flag_invalidate;
 
     // hardware transactional memory
 
@@ -832,12 +834,19 @@ class Packet : public Printable, public Extensible<Packet>
     {
         return flag_specTag2;
     }
+    int isSpecClear() {
+        return flag_clear;
+    }
+    int isSpecInvalidate() {
+        return flag_invalidate;
+    }
     // int isSpecClear() {
-    //     return flag_clear;
+    //     return cmd == MemCmd::SpecClearReq;
     // }
     // int isSpecInvalidate() {
-    //     return flag_invalidate;
+    //     return cmd == MemCmd::SpecInvalidateReq;
     // }
+
 
     /**
      * Get address range to which this packet belongs.
@@ -964,12 +973,15 @@ class Packet : public Printable, public Extensible<Packet>
             flags.set(VALID_SIZE);
         }
 
-        if (specTag1 == 1) {
+        // if (req->getFlags() == Request::SPEC_TAG0)
+        //     flag_specTag1 = 1;
+        // if (req->getFlags() == Request::SPEC_TAG1)
+        //     flag_specTag2 = 1;
+
+        if (specTag1 == 1)
             flag_specTag1 = 1;
-        }
-        if (specTag2 == 1) {
+        if (specTag2 == 1)
             flag_specTag2 = 1;
-        }
     }
 
     /**
@@ -1099,13 +1111,18 @@ class Packet : public Printable, public Extensible<Packet>
     static PacketPtr
     createRead(const RequestPtr &req, int specTag1 = 0, int specTag2 = 0)
     {
-        std::cout << "creating read Packet" << std::endl;
+        packetLog  << "creating read Packet:"
+                   << "SpecTag1 = " << specTag1
+                   << " SpecTag2 = " << specTag2 << std::endl;
         return new Packet(req, makeReadCmd(req), specTag1, specTag2);
     }
 
     static PacketPtr
     createWrite(const RequestPtr &req, int specTag1 = 0, int specTag2 = 0)
-    {   
+    {
+        packetLog  << "creating write Packet:"
+                   <<"SpecTag1 = " << specTag1
+                   << " SpecTag2 = " << specTag2 << std::endl;
         return new Packet(req, makeWriteCmd(req), specTag1, specTag2);
     }
 

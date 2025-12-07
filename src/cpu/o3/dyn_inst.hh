@@ -1017,22 +1017,22 @@ class DynInst : public ExecContext, public RefCounted
     Tick firstIssue = -1;
     Tick lastWakeDependents = -1;
 
-    uint64_t getSpecTag1() const { 
-        std::cout << "getSpectTag1 call" << std::endl;
-        return specTag1; 
+    uint64_t getSpecTag1() const {
+        //std::cout << "getSpectTag1 call" << std::endl;
+        return specTag1;
     }
-    void setSpecTag1(uint64_t tag) { 
-        std::cout << "setSpecTag1 call" << std::endl;
-        specTag1 = tag; 
+    void setSpecTag1(uint64_t tag) {
+        //std::cout << "setSpecTag1 call" << std::endl;
+        specTag1 = tag;
     }
 
-    uint64_t getSpecTag2() const { 
-        std::cout << "getSpectTag2 call" << std::endl;
-        return specTag2; 
+    uint64_t getSpecTag2() const {
+        //std::cout << "getSpectTag2 call" << std::endl;
+        return specTag2;
     }
-    void setSpecTag2(uint64_t tag) { 
-        std::cout << "setSpecTag2 call" << std:: endl;
-        specTag2 = tag; 
+    void setSpecTag2(uint64_t tag) {
+        //std::cout << "setSpecTag2 call" << std:: endl;
+        specTag2 = tag;
     }
 
 

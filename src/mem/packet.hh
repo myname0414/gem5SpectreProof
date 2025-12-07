@@ -411,7 +411,7 @@ class Packet : public Printable, public Extensible<Packet>
     int flag_specTag1;
     int flag_specTag2;
     int flag_clear;
-    int flag_invalidate;
+    int flag_squash;
 
     // hardware transactional memory
 
@@ -834,11 +834,13 @@ class Packet : public Printable, public Extensible<Packet>
     {
         return flag_specTag2;
     }
-    int isSpecClear() {
+
+    int getFlagClear() {
         return flag_clear;
     }
-    int isSpecInvalidate() {
-        return flag_invalidate;
+
+    int getFlagSquash() {
+        return flag_squash;
     }
 
     /**
@@ -906,7 +908,7 @@ class Packet : public Printable, public Extensible<Packet>
         flag_specTag1(0),
         flag_specTag2(0),
         flag_clear(0),
-        flag_invalidate(0)
+        flag_squash(0)
     {
         flags.clear();
         if (req->hasPaddr()) {
@@ -940,7 +942,7 @@ class Packet : public Printable, public Extensible<Packet>
            flag_specTag1(0),
            flag_specTag2(0),
            flag_clear(0),
-           flag_invalidate(0)
+           flag_squash(0)
     {
         flags.clear();
         if (req->hasPaddr()) {
@@ -968,15 +970,63 @@ class Packet : public Printable, public Extensible<Packet>
             flags.set(VALID_SIZE);
         }
 
-        // if (req->getFlags() == Request::SPEC_TAG0)
-        //     flag_specTag1 = 1;
-        // if (req->getFlags() == Request::SPEC_TAG1)
-        //     flag_specTag2 = 1;
-
-        if (specTag1 == 1)
+        if (specTag1 == 1) {
             flag_specTag1 = 1;
-        if (specTag2 == 1)
+        }
+        if (specTag2 == 1) {
             flag_specTag2 = 1;
+        }            
+    }
+
+        /**
+     * Constructor. Note that a Request object must be constructed
+     * first, but the Requests's physical address and size fields need
+     * not be valid. The command must be supplied.
+     */
+    Packet(const PacketPtr &pkt, int specTag1, int specTag2, bool squash, bool clear)
+        :  cmd(pkt->cmd), id(pkt->id), req(pkt->req),
+           data(nullptr), addr(pkt->addr), _isSecure(false), size(pkt->size),
+           _qosValue(pkt->_qosValue),
+           htmReturnReason(HtmCacheFailure::NO_FAIL),
+           htmTransactionUid(pkt->htmTransactionUid),
+           headerDelay(pkt->headerDelay), snoopDelay(pkt->snoopDelay),
+           payloadDelay(pkt->payloadDelay), senderState(NULL),
+           flag_specTag1(0),
+           flag_specTag2(0),
+           flag_clear(0),
+           flag_squash(0)
+    {
+        flags.clear();
+        if (req->hasPaddr()) {
+            addr = req->getPaddr();
+            flags.set(VALID_ADDR);
+            _isSecure = req->isSecure();
+        }
+
+        if (req->isHTMCmd()) {
+            flags.set(VALID_ADDR);
+            assert(addr == 0x0);
+        }
+        if (req->hasSize()) {
+            size = req->getSize();
+            flags.set(VALID_SIZE);
+        }
+
+        //573 new code
+        if (specTag1 == 1) {
+            flag_specTag1 = 1;
+        }
+        if (specTag2 == 1) {
+            flag_specTag2 = 1;
+        }
+        
+        if (squash) {
+            flag_squash = 1;
+        }
+        
+        if (clear) {
+            flag_clear = 1;
+        }
     }
 
     /**
@@ -992,10 +1042,10 @@ class Packet : public Printable, public Extensible<Packet>
            htmTransactionUid(0),
            headerDelay(0),
            snoopDelay(0), payloadDelay(0), senderState(NULL),
-           flag_specTag1(0),
+            flag_specTag1(0),
            flag_specTag2(0),
            flag_clear(0),
-           flag_invalidate(0)
+           flag_squash(0)
     {
         flags.clear();
         if (req->hasPaddr()) {
@@ -1027,10 +1077,10 @@ class Packet : public Printable, public Extensible<Packet>
            snoopDelay(0),
            payloadDelay(pkt->payloadDelay),
            senderState(pkt->senderState),
-           flag_specTag1(0),
+            flag_specTag1(0),
            flag_specTag2(0),
            flag_clear(0),
-           flag_invalidate(0)
+           flag_squash(0)
     {
         if (!clear_flags)
             flags.set(pkt->flags & COPY_FLAGS);
@@ -1120,7 +1170,7 @@ class Packet : public Printable, public Extensible<Packet>
 
     static PacketPtr
     createWrite(const RequestPtr &req, int specTag1 = 0, int specTag2 = 0)
-    {
+    {   
         return new Packet(req, makeWriteCmd(req), specTag1, specTag2);
     }
 

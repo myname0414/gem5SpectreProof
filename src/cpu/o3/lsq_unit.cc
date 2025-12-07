@@ -317,6 +317,25 @@ LSQUnit::insert(const DynInstPtr &inst)
     inst->setInLSQ();
 }
 
+// 573 New Code
+void 
+LSQUnit::clearSpecLines(const DynInstPtr &clearInst)
+    //Packet(const PacketPtr &pkt, int specTag1, int specTag2, bool squash, bool clear)
+    //create a new packet
+    PacketPtr new_pkt = new Packet(*request->packet(), clearInst->getSpecTag1(), clearInst->getSpecTag2(), false, true);
+    //sendTimingReq
+    dcachePort->sendTimingReq(new_pkt);
+}
+
+void 
+LSQUnit::squashSpecLines(const DynInstPtr &squashInst){
+    //Packet(const PacketPtr &pkt, int specTag1, int specTag2, bool squash, bool clear)
+    //create a new packet
+    PacketPtr new_pkt = new Packet(*request->packet(), clearInst->getSpecTag1(), clearInst->getSpecTag2(), true, false);
+    //sendTimingReq
+    dcachePort->sendTimingReq(new_pkt);
+}
+
 void
 LSQUnit::insertLoad(const DynInstPtr &load_inst)
 {
@@ -1078,6 +1097,7 @@ LSQUnit::storePostSend()
 
     storeWBIt++;
 }
+
 
 void
 LSQUnit::writeback(const DynInstPtr &inst, PacketPtr pkt)

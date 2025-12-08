@@ -868,6 +868,9 @@ class BaseCache : public ClockedObject
     void clearSpecBit1(CacheBlk &blk);
     void invalidateSpecBit0(CacheBlk &blk);
     void invalidateSpecBit1(CacheBlk &blk);
+    void invalidateSafe(CacheBlk &blk);
+    void invalidateAll();
+
 
     /**
      * Invalidates all blocks in the cache.
@@ -1185,6 +1188,8 @@ class BaseCache : public ClockedObject
     }
 
     const AddrRangeList &getAddrRanges() const { return addrRanges; }
+
+    void clearSpec();
 
     MSHR *allocateMissBuffer(PacketPtr pkt, Tick time, bool sched_send = true)
     {

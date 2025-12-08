@@ -63,7 +63,7 @@
 #include "params/BaseCache.hh"
 #include "params/WriteAllocator.hh"
 #include "sim/cur_tick.hh"
-
+#include <iostream>
 namespace gem5
 {
 
@@ -409,6 +409,7 @@ BaseCache::recvTimingReq(PacketPtr pkt)
 {
     // anything that is merely forwarded pays for the forward latency and
     // the delay provided by the crossbar
+    if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " sanity check : recvTimingReq " << std::endl;
     Tick forward_time = clockEdge(forwardLatency) + pkt->headerDelay;
 
     if (pkt->cmd == MemCmd::LockedRMWWriteReq) {
@@ -425,6 +426,7 @@ BaseCache::recvTimingReq(PacketPtr pkt)
         blk->setCoherenceBits(CacheBlk::WritableBit);
     }
 
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " sanity check : recvTimingReq2 " << std::endl;
     Cycles lat;
     CacheBlk *blk = nullptr;
     bool satisfied = false;
@@ -432,7 +434,9 @@ BaseCache::recvTimingReq(PacketPtr pkt)
         PacketList writebacks;
         // Note that lat is passed by reference here. The function
         // access() will set the lat value.
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " sanity check : recvTimingReq3 with " << pkt->cmdString() << std::endl;
         satisfied = access(pkt, blk, lat, writebacks);
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " sanity check : recvTimingReq4 just finis hed" << pkt->cmdString() << std::endl;
 
         // After the evicted blocks are selected, they must be forwarded
         // to the write buffer to ensure they logically precede anything
@@ -459,9 +463,10 @@ BaseCache::recvTimingReq(PacketPtr pkt)
                     pkt->getAddr(), pkt->isSecure() ? "s" : "ns");
             blk->clearPrefetched();
         }
-
+        //std::cou
         handleTimingReqHit(pkt, blk, request_time);
     } else {
+        //std::cout << "Cache miss for packet: " << pkt->print() << std::endl;
         handleTimingReqMiss(pkt, blk, forward_time, request_time);
 
         ppMiss->notify(CacheAccessProbeArg(pkt,accessor));
@@ -1096,25 +1101,100 @@ BaseCache::updateCompressionData(CacheBlk *&blk, const uint64_t* data,
     return true;
 }
 
+
 void
 BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
 {
+        // Console dump of pkt and blk
+    std::cout << "\n=== satisfyRequest dump @ " << name() << " ===\n";
+    if (pkt) {
+        std::cout << "Packet:\n";
+        std::cout << "  print:           " << pkt->print() << "\n";
+        std::cout << "  cmd:             " << pkt->cmd.toString() << "\n";
+        std::cout << "  addr:            0x" << std::hex << pkt->getAddr() << std::dec << "\n";
+        std::cout << "  blockAddr:       0x" << std::hex << pkt->getBlockAddr(blkSize) << std::dec << "\n";
+        std::cout << "  offset:          " << pkt->getOffset(blkSize) << "\n";
+        std::cout << "  size:            " << pkt->getSize() << "\n";
+        std::cout << "  id:              " << pkt->id << "\n";
+        std::cout << "  secure:          " << pkt->isSecure() << "\n";
+        std::cout << "  isRequest:       " << pkt->isRequest() << "\n";
+        std::cout << "  isResponse:      " << pkt->isResponse() << "\n";
+        std::cout << "  isRead:          " << pkt->isRead() << "\n";
+        std::cout << "  isWrite:         " << pkt->isWrite() << "\n";
+        std::cout << "  isUpgrade:       " << pkt->isUpgrade() << "\n";
+        std::cout << "  isInvalidate:    " << pkt->isInvalidate() << "\n";
+        std::cout << "  isClean:         " << pkt->isClean() << "\n";
+        std::cout << "  isEviction:      " << pkt->isEviction() << "\n";
+        std::cout << "  isWriteback:     " << pkt->isWriteback() << "\n";
+        std::cout << "  isLLSC:          " << pkt->isLLSC() << "\n";
+        std::cout << "  needsWritable:   " << pkt->needsWritable() << "\n";
+        std::cout << "  hasData:         " << pkt->hasData() << "\n";
+        std::cout << "  hasRespData:     " << pkt->hasRespData() << "\n";
+        std::cout << "  hasSharers:      " << pkt->hasSharers() << "\n";
+        std::cout << "  cacheResponding: " << pkt->cacheResponding() << "\n";
+        std::cout << "  writeThrough:    " << pkt->writeThrough() << "\n";
+        std::cout << "  expressSnoop:    " << pkt->isExpressSnoop() << "\n";
+        std::cout << "  error:           " << pkt->isError() << "\n";
+        std::cout << "  headerDelay:     " << pkt->headerDelay << "\n";
+        std::cout << "  payloadDelay:    " << pkt->payloadDelay << "\n";
+        // Your custom speculative control flags (present in this tree)
+        std::cout << "  SpecuCtrl flags: clear=" << pkt->getFlagClear()
+                  << " squash=" << pkt->getFlagSquash()
+                  << " specTag1=" << pkt->getFlagSpecTag1()
+                  << " specTag2=" << pkt->getFlagSpecTag2() << "\n";
+        if (pkt->req) {
+            std::cout << "Request:\n";
+            std::cout << "  requestorId:     " << pkt->req->requestorId() << "\n";
+            std::cout << "  uncacheable:     " << pkt->req->isUncacheable() << "\n";
+            std::cout << "  cacheMaint:      " << pkt->req->isCacheMaintenance() << "\n";
+            std::cout << "  cacheInvalidate: " << pkt->req->isCacheInvalidate() << "\n";
+        }
+    } else {
+        std::cout << "Packet: <null>\n";
+    }
+
+    if (blk) {
+        std::cout << "CacheBlk:\n";
+        std::cout << "  print:           " << blk->print() << "\n";
+        std::cout << "  addr:            0x" << std::hex << regenerateBlkAddr(blk) << std::dec << "\n";
+        std::cout << "  valid:           " << blk->isValid() << "\n";
+        std::cout << "  secure:          " << blk->isSecure() << "\n";
+        std::cout << "  readable:        " << blk->isSet(CacheBlk::ReadableBit) << "\n";
+        std::cout << "  writable:        " << blk->isSet(CacheBlk::WritableBit) << "\n";
+        std::cout << "  dirty:           " << blk->isSet(CacheBlk::DirtyBit) << "\n";
+        std::cout << "  whenReady:       " << blk->getWhenReady() << "\n";
+        std::cout << "  wasPrefetched:   " << blk->wasPrefetched() << "\n";
+        std::cout << "  srcRequestorId:  " << blk->getSrcRequestorId() << "\n";
+        std::cout << "  partitionId:     " << blk->getPartitionId() << "\n";
+        std::cout << "  specTag0:        " << blk->isSpeculativeTag0() << "\n";
+        std::cout << "  specTag1:        " << blk->isSpeculativeTag1() << "\n";
+        std::cout << "  data(ptr):       " << static_cast<const void*>(blk->data) << "\n";
+        if (auto cblk = dynamic_cast<CompressionBlk*>(blk)) {
+            std::cout << "  compSize(bits):  " << cblk->getSizeBits() << "\n";
+        }
+    } else {
+        std::cout << "CacheBlk: <null>\n";
+    }
+    //std::cout << "Args: arg1=" << arg1 << " arg2=" << arg2 << "\n";
+    std::cout << "=== end dump ===\n\n";
+
     assert(pkt->isRequest());
 
-    assert(blk && blk->isValid());
-    // Occasionally this is not true... if we are a lower-level cache
+    assert(blk && blk->isValid() || pkt->cmd == MemCmd::SpecuCtrl);
+
     // satisfying a string of Read and ReadEx requests from
     // upper-level caches, a Read will mark the block as shared but we
     // can satisfy a following ReadEx anyway since we can rely on the
     // Read requestor(s) to have buffered the ReadEx snoop and to
     // invalidate their blocks after receiving them.
     // assert(!pkt->needsWritable() || blk->isSet(CacheBlk::WritableBit));
-    assert(pkt->getOffset(blkSize) + pkt->getSize() <= blkSize);
+    assert(pkt->getOffset(blkSize) + pkt->getSize() <= blkSize || pkt->cmd == MemCmd::SpecuCtrl);
 
     // Check RMW operations first since both isRead() and
     // isWrite() will be true for them
     if (pkt->cmd == MemCmd::SwapReq) {
         if (pkt->isAtomicOp()) {
+            std::cout << "Atomic SwapReq received in " << name() << std::endl;
             // Get a copy of the old block's contents for the probe before
             // the update
             CacheDataUpdateProbeArg data_update(
@@ -1145,9 +1225,11 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
             // set block status to dirty
             blk->setCoherenceBits(CacheBlk::DirtyBit);
         } else {
+            std::cout << "Non-Atomic SwapReq received in " << name() << std::endl;
             cmpAndSwap(blk, pkt);
         }
     } else if (pkt->getFlagClear()) {
+        std::cout << " FlagClear received in " << name() << std::endl;
         // 573 spec clear logic
         if (pkt->getFlagSpecTag1()) {
             clearAllSpecBit0();
@@ -1156,14 +1238,17 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
             clearAllSpecBit1();
         }  
     } else if (pkt->getFlagSquash()) {
+        std::cout << " FlagSquash received in " << name() << std::endl;
         // 573 spec invalidate logic
-        if (pkt->getFlagSpecTag1()) {
-            invalidateAllSpecBit0();
-        }
-        if (pkt->getFlagSpecTag2()) {
-            invalidateAllSpecBit1();
-        }
+        //if (pkt->getFlagSpecTag1()) {
+        //    invalidateAllSpecBit0();
+        //}
+        //if (pkt->getFlagSpecTag2()) {
+        //    invalidateAllSpecBit1();
+        //}
+        invalidateAll();
     } else if (pkt->isWrite()) {
+        std::cout << " Write received in " << name() << std::endl;
         // we have the block in a writable state and can go ahead,
         // note that the line may be also be considered writable in
         // downstream caches along the path to memory, but always
@@ -1181,20 +1266,24 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         DPRINTF(CacheVerbose, "%s for %s (write)\n", __func__, pkt->print());
     }
     else if (pkt->isRead()) {
+        std::cout << " Read received in " << name() << std::endl;
         if (pkt->isLLSC()) {
+            std::cout << " Read isLLSC " << name() << std::endl;
             blk->trackLoadLocked(pkt);
         }
 
         // all read responses have a data payload
         assert(pkt->hasRespData());
         pkt->setDataFromBlock(blk->data, blkSize);
-        if (pkt->getFlagSpecTag1() == 1) {
+        if (pkt->getFlagSpecTag1() == 1) {\
             blk->setSpeculativeTag0();
         }
         if (pkt->getFlagSpecTag2() == 1) {
             blk->setSpeculativeTag1();
         }
+        std::cout << " Read done marking spec bits " << name() << std::endl;
     } else if (pkt->isUpgrade()) {
+        std::cout << " Upgrade received in " << name() << std::endl;
         // sanity check
         assert(!pkt->hasSharers());
 
@@ -1206,13 +1295,16 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
             blk->clearCoherenceBits(CacheBlk::DirtyBit);
         }
     } else if (pkt->isClean()) {
+        std::cout << " Clean received in " << name() << std::endl;
         blk->clearCoherenceBits(CacheBlk::DirtyBit);
     } else {
         assert(pkt->isInvalidate());
+        std::cout << " Invalidate received in " << name() << std::endl;
         invalidateBlock(blk);
         DPRINTF(CacheVerbose, "%s for %s (invalidation)\n", __func__,
                 pkt->print());
     }
+        std::cout << " Done " << name() << std::endl;
 }
 
 /////////////////////////////////////////////////////
@@ -1268,6 +1360,9 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                   PacketList &writebacks)
 {
     // sanity check
+    std::cout << " sanity check : access " << std::endl;
+    std::cout << pkt->cmdString() << std::endl; 
+    if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " sanity check 1: BaseCache::access " << std::endl;
     assert(pkt->isRequest());
 
     gem5_assert(!(isReadOnly && pkt->isWrite()),
@@ -1282,6 +1377,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
             blk ? "hit " + blk->print() : "miss");
 
     if (pkt->req->isCacheMaintenance()) {
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " oopsie 1 pkt->req->isCacheMaintenance(" << std::endl;
         // A cache maintenance operation is always forwarded to the
         // memory below even if the block is found in dirty state.
 
@@ -1297,6 +1393,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
     }
 
     if (pkt->isEviction()) {
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " oopsie 2: pkt->isEviction()" << std::endl;
         // We check for presence of block in above caches before issuing
         // Writeback or CleanEvict to write buffer. Therefore the only
         // possible cases can be of a CleanEvict packet coming from above
@@ -1340,12 +1437,14 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
     // The critical latency part of a write depends only on the tag access
     if (pkt->isWrite()) {
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " oopsie 3 " << std::endl;
         lat = calculateTagOnlyLatency(pkt->headerDelay, tag_latency);
     }
 
     // Writeback handling is special case.  We can write the block into
     // the cache without having a writeable copy (or any copy at all).
     if (pkt->isWriteback()) {
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " oopsie 4 " << std::endl;
         assert(blkSize == pkt->getSize());
 
         // we could get a clean writeback while we are having
@@ -1415,6 +1514,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
 
         return true;
     } else if (pkt->cmd == MemCmd::CleanEvict) {
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " oopsie 5 " << std::endl;
         // A CleanEvict does not need to access the data array
         lat = calculateTagOnlyLatency(pkt->headerDelay, tag_latency);
 
@@ -1431,6 +1531,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // go to next level.
         return false;
     } else if (pkt->cmd == MemCmd::WriteClean) {
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " oopsie 6 " << std::endl;
         // WriteClean handling is a special case. We can allocate a
         // block directly if it doesn't exist and we can update the
         // block immediately. The WriteClean transfers the ownership
@@ -1456,6 +1557,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
                 blk->setCoherenceBits(CacheBlk::ReadableBit);
             }
         } else if (compressor) {
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " oopsie 7 " << std::endl;
             // This is an overwrite to an existing block, therefore we need
             // to check for data expansion (i.e., block was compressed with
             // a smaller size, and now it doesn't fit the entry anymore).
@@ -1497,6 +1599,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         // OK to satisfy access
         incHitCount(pkt);
 
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " oopsie 8 " << std::endl;
         // Calculate access latency based on the need to access the data array
         if (pkt->isRead()) {
             lat = calculateAccessLatency(blk, pkt->headerDelay, tag_latency);
@@ -1514,7 +1617,13 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         maintainClusivity(pkt->fromCache(), blk);
 
         return true;
+    } else if (pkt->cmd == MemCmd::SpecuCtrl) {
+        std::cout << "Speculation Control Packet received at " << name() << std::endl;
+        satisfyRequest(pkt, blk);
+        return true;
+        
     }
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " oopsie 9 " << std::endl;
 
     // Can't satisfy access normally... either no block (blk == nullptr)
     // or have block but need writable
@@ -1851,6 +1960,7 @@ BaseCache::clearAllSpecBit1() // Clears every speculative bit 1
 void
 BaseCache::invalidateAllSpecBit0() // Invalidates cache line && clears speculative bit 0
 {
+
     tags->forEachBlk([this](CacheBlk &blk) { invalidateSpecBit0(blk); });
 }
 
@@ -1860,13 +1970,20 @@ BaseCache::invalidateAllSpecBit1() // Invalidates cache line && clears speculati
     tags->forEachBlk([this](CacheBlk &blk) { invalidateSpecBit1(blk); });
 }
 
+void
+BaseCache::invalidateAll() // Invalidates everything
+{
+    tags->forEachBlk([this](CacheBlk &blk) { invalidateSafe(blk); });
+}
+
+
 
 
     
 void
 BaseCache::clearSpecBit0(CacheBlk &blk) 
 {
-    if (blk.isSpeculativeTag0()) {
+    if (blk.isValid() && blk.isSpeculativeTag0()) {
         blk.clearSpeculativeTag0();
     }
 }
@@ -1875,7 +1992,7 @@ BaseCache::clearSpecBit0(CacheBlk &blk)
 void
 BaseCache::clearSpecBit1(CacheBlk &blk) 
 {
-    if (blk.isSpeculativeTag1()) {
+    if (blk.isValid() && blk.isSpeculativeTag1()) {
         blk.clearSpeculativeTag1();
     }
 }
@@ -1883,8 +2000,18 @@ BaseCache::clearSpecBit1(CacheBlk &blk)
 void
 BaseCache::invalidateSpecBit0(CacheBlk &blk) 
 {
-    if (blk.isSpeculativeTag0()) {
-        invalidateBlock(&blk);
+    if (blk.isValid() && blk.isSpeculativeTag0() && !blk.isSet(CacheBlk::DirtyBit)) {
+        //invalidateBlock(&blk);
+        invalidateVisitor(blk);
+    }
+}
+
+void
+BaseCache::invalidateSafe(CacheBlk &blk) 
+{
+    if (blk.isValid() &&!blk.isSet(CacheBlk::DirtyBit)) {
+        //invalidateBlock(&blk);
+        invalidateVisitor(blk);
     }
 }
 
@@ -1892,8 +2019,9 @@ BaseCache::invalidateSpecBit0(CacheBlk &blk)
 void
 BaseCache::invalidateSpecBit1(CacheBlk &blk) 
 {
-    if (blk.isSpeculativeTag1()) {
-        invalidateBlock(&blk);
+    if (blk.isValid() && blk.isSpeculativeTag1() && !blk.isSet(CacheBlk::DirtyBit)) {
+        //invalidateBlock(&blk);
+        invalidateVisitor(blk);
     }
 }
 
@@ -2661,6 +2789,7 @@ BaseCache::CpuSidePort::tryTiming(PacketPtr pkt)
 bool
 BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
 {
+    if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " received SpecuCtrl packet at port " << std::endl;
     assert(pkt->isRequest());
 
     if (cache.system->bypassCaches()) {
@@ -2670,6 +2799,7 @@ BaseCache::CpuSidePort::recvTimingReq(PacketPtr pkt)
         assert(success);
         return true;
     } else if (tryTiming(pkt)) {
+        if (pkt->cmd == MemCmd::SpecuCtrl) std::cout << " SpecuCtrl passed timing check " << std::endl;
         cache.recvTimingReq(pkt);
         return true;
     }
@@ -2696,10 +2826,11 @@ BaseCache::CpuSidePort::recvFunctional(PacketPtr pkt)
         cache.memSidePort.sendFunctional(pkt);
         return;
     }
-
     // functional request
     cache.functionalAccess(pkt, true);
 }
+
+
 
 AddrRangeList
 BaseCache::CpuSidePort::getAddrRanges() const

@@ -774,9 +774,19 @@ Commit::commit()
 
                     //573 squash cache lines
                     // Get the spec tags from the mispredicted instruction to figure out which lines to flush
-                    // int tag1 = fromIEW->mispredictInst[tid]->getSpecTag1();
-                    // int tag2 = fromIEW->mispredictInst[tid]->getSpecTag2();
+                    int tag1 = fromIEW->mispredictInst[tid]->getSpecTag1();
+                    int tag2 = fromIEW->mispredictInst[tid]->getSpecTag2();
+
+                    // DynInstPtr head_inst;
+
+                    // ThreadID commit_thread = getCommittingThread();
+
+                    // head_inst = rob->readHeadInst(commit_thread);
+
+                    //if ((tag1 == 1|| tag2 == 1) && fromIEW->mispredictInst[tid]->isControl()) {
                     toIEW->commitInfo[tid].squashSpecLines = true;
+                    
+                    //}
 
             } else {
                 DPRINTF(Commit,

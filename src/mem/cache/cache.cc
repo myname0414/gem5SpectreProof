@@ -327,7 +327,7 @@ Cache::handleTimingReqMiss(PacketPtr pkt, CacheBlk *blk, Tick forward_time,
 
     // These should always hit due to the earlier Locked Read
     assert(pkt->cmd != MemCmd::LockedRMWWriteReq);
-    if (pkt->req->isUncacheable()) {
+    if (pkt->req->isUncacheable()) {    
         // ignore any existing MSHR if we are dealing with an
         // uncacheable request
 

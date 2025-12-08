@@ -706,6 +706,7 @@ IEW::checkSignalsAndUpdate(ThreadID tid)
     if (fromCommit->commitInfo[tid].squashSpecLines)
     {
         ldstQueue.squashSpecLines(tid, fromCommit->commitInfo[tid].squashInst);
+        std::cout << " finished squashing from iew " << std::endl;
     }
 
     if (fromCommit->commitInfo[tid].squash) {

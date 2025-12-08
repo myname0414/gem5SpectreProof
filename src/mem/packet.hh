@@ -995,6 +995,7 @@ class Packet : public Printable, public Extensible<Packet>
            flag_clear(0),
            flag_squash(0)
     {
+        if (_cmd == MemCmd::SpecuCtrl) std::cout << " calling packet constr with memcmd " << std::endl;
         flags.clear();
         if (req->hasPaddr()) {
             addr = req->getPaddr();
@@ -1570,7 +1571,7 @@ class Packet : public Printable, public Extensible<Packet>
     bool
     isCleanInvalidateRequest() const
     {
-        return cmd == MemCmd::CleanInvalidReq;
+        return cmd == MemCmd::CleanInvalidReq || cmd == MemCmd::SpecuCtrl;
     }
 
     bool

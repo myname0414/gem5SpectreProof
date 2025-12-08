@@ -60,7 +60,7 @@
 #include "debug/Writeback.hh"
 #include "params/BaseO3CPU.hh"
 
-static std::ofstream lsqLog("lsqcalls.txt");
+// static std::ofstream lsqLog("lsqcalls.txt");
 
 namespace gem5
 {
@@ -1203,11 +1203,12 @@ void
 LSQ::SingleDataRequest::buildPackets()
 {
 
-    lsqLog << "this is a single data request building packets" << std::endl;
+    // lsqLog << "this is a single data request building packets" << std::endl;
     /* Retries do not create new packets. */
     if (_packets.size() == 0) {
         _packets.push_back(
                 isLoad()
+                    // 573 Add in speculation tags for load requests
                     ?  Packet::createRead(req(), _inst->getSpecTag1(), _inst->getSpecTag2())
                     :  Packet::createWrite(req()));
         _packets.back()->dataStatic(_inst->memData);
@@ -1238,11 +1239,12 @@ LSQ::SplitDataRequest::buildPackets()
 {
     /* Extra data?? */
     Addr base_address = _addr;
-    lsqLog << "this is a Split Data Request building packets" << std::endl;
+    // lsqLog << "this is a Split Data Request building packets" << std::endl;
 
     if (_packets.size() == 0) {
         /* New stuff */
         if (isLoad()) {
+            // 573 Add in speculation tags for load requests
             _mainPacket = Packet::createRead(_mainReq, _inst->getSpecTag1(), _inst->getSpecTag2());
             _mainPacket->dataStatic(_inst->memData);
 
@@ -1263,6 +1265,7 @@ LSQ::SplitDataRequest::buildPackets()
         }
         for (int i = 0; i < _reqs.size() && _fault[i] == NoFault; i++) {
             RequestPtr req = _reqs[i];
+            // 573 Add in speculation tags for load requests
             PacketPtr pkt = isLoad() ? Packet::createRead(req, _inst->getSpecTag1(), _inst->getSpecTag2())
                                      : Packet::createWrite(req);
             ptrdiff_t offset = req->getVaddr() - base_address;
@@ -1600,12 +1603,11 @@ LSQ::checkStaleTranslations()
     staleTranslationWaitTxnId = 0;
 }
 
-//573 new code
+// 573 Add in functionality to clear and squash spec lines
 void
 LSQ::clearSpecLines(ThreadID tid, const DynInstPtr& inst){
     thread[tid].clearSpecLines(inst);
 }
-
 void
 LSQ::squashSpecLines(ThreadID tid, const DynInstPtr& inst){
     thread[tid].squashSpecLines(inst);

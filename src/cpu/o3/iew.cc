@@ -418,8 +418,6 @@ IEW::squash(ThreadID tid)
     ldstQueue.squash(fromCommit->commitInfo[tid].doneSeqNum, tid);
     updatedQueues = true;
 
-    // 573 Possible Squashing Location?
-
     // Clear the skid buffer in case it has any data in it.
     DPRINTF(IEW,
             "Removing skidbuffer instructions until "
@@ -697,8 +695,8 @@ IEW::checkSignalsAndUpdate(ThreadID tid)
     //     if so then go to unblocking
     // If status was Squashing
     //     check if squashing is not high.  Switch to running this cycle.
-    // 573 Code
 
+    // 573 Send any clear/squash signals to the LSQ after branch resolves in commit
     if (fromCommit->commitInfo[tid].clearSpecLines) {
         ldstQueue.clearSpecLines(tid, fromCommit->commitInfo[tid].clearInst);
     }
@@ -706,7 +704,6 @@ IEW::checkSignalsAndUpdate(ThreadID tid)
     if (fromCommit->commitInfo[tid].squashSpecLines)
     {
         ldstQueue.squashSpecLines(tid, fromCommit->commitInfo[tid].squashInst);
-        std::cout << " finished squashing from iew " << std::endl;
     }
 
     if (fromCommit->commitInfo[tid].squash) {
@@ -873,8 +870,6 @@ IEW::dispatch(ThreadID tid)
 void
 IEW::dispatchInsts(ThreadID tid)
 {
-    // 573 maybe here for branch taken?
-
     // Obtain instructions from skid buffer if unblocking, or queue from rename
     // otherwise.
     std::queue<DynInstPtr> &insts_to_dispatch =
@@ -1303,7 +1298,7 @@ IEW::executeInsts()
                         tid, inst->seqNum, inst->pcState());
                 // If incorrect, then signal the ROB that it must be squashed.
                 squashDueToBranch(inst, tid);
-                // Use this function to invalidate speculative cache lines after a branch mispredict
+                // 573 Use this function to invalidate speculative cache lines after a branch mispredict
                 
 
                 ppMispredict->notify(inst);
@@ -1444,11 +1439,8 @@ IEW::tick()
     for (ThreadID tid : *activeThreads) {
         DPRINTF(IEW,"Issue: Processing [tid:%i]\n", tid);
 
-        //573 new code
-
         checkSignalsAndUpdate(tid);
         dispatch(tid);
-
 
     }
 

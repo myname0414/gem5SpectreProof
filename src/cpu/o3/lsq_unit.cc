@@ -317,31 +317,26 @@ LSQUnit::insert(const DynInstPtr &inst)
     inst->setInLSQ();
 }
 
-// 573 New Code
+// 573 create and send packets with clear/squash information to cache
 void 
 LSQUnit::clearSpecLines(const DynInstPtr &clearInst){
     RequestPtr req = std::make_shared<Request>(0, 1, Request::NO_ACCESS,
                                                 cpu->dataRequestorId());
-    //Packet(const PacketPtr &pkt, int specTag1, int specTag2, bool squash, bool clear)
     //create a new packet
-    std::cout << " sending spec clear packet " << std::endl;
     PacketPtr new_pkt = new Packet(req, MemCmd::SpecuCtrl, clearInst->getSpecTag1(), clearInst->getSpecTag2(), false, true);
-    //sendTimingReq
+    //send to cache via timing req
     dcachePort->sendTimingReq(new_pkt);
-    std::cout << " sent spec clear packet " << std::endl;
 }
 
+// 573 create and send packets with clear/squash information to cache
 void 
 LSQUnit::squashSpecLines(const DynInstPtr &squashInst){
     RequestPtr req = std::make_shared<Request>(0, 1, Request::NO_ACCESS,
                                                 cpu->dataRequestorId());
-    //Packet(const PacketPtr &pkt, int specTag1, int specTag2, bool squash, bool clear)
     //create a new packet
-    std::cout << " sending spec squash packet " << std::endl;
     PacketPtr new_pkt = new Packet(req, MemCmd::SpecuCtrl, squashInst->getSpecTag1(), squashInst->getSpecTag2(), true, false);
-    //sendTimingReq
+    //send to cache via timing req
     dcachePort->sendTimingReq(new_pkt);
-    std::cout << " sent spec squash packet " << std::endl;
 }
 
 void

@@ -883,6 +883,7 @@ class LSQ
      */
     void checkStaleTranslations();
 
+    // 573 Functions to interact with speculative lines in the cache, further functionality in lsq_unit file
     void clearSpecLines(ThreadID tid, const DynInstPtr& inst);
     void squashSpecLines(ThreadID tid, const DynInstPtr& inst);
 

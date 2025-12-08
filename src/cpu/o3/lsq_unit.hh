@@ -237,6 +237,7 @@ class LSQUnit
     /** Takes over from another CPU's thread. */
     void takeOverFrom();
 
+    /** Creates packet with speculative data and sends to cache */
     void clearSpecLines(const DynInstPtr &clearInst);
     void squashSpecLines(const DynInstPtr &squashInst);
 

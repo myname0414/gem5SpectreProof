@@ -63,6 +63,8 @@ struct BaseO3CPUParams;
 namespace o3
 {
 
+class Commit;
+class IEW;
 /**
  * Rename handles both single threaded and SMT rename. Its
  * width is specified by the parameters; each cycle it tries to rename

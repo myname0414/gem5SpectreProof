@@ -1602,12 +1602,12 @@ LSQ::checkStaleTranslations()
 
 //573 new code
 void
-LSQ::clearSpecLines(TreadID tid, const DynInstPtr& inst){
+LSQ::clearSpecLines(ThreadID tid, const DynInstPtr& inst){
     thread[tid].clearSpecLines(inst);
 }
 
 void
-LSQ::squashSpecLines(TreadID tid, const DynInstPtr& inst){
+LSQ::squashSpecLines(ThreadID tid, const DynInstPtr& inst){
     thread[tid].squashSpecLines(inst);
 }
 

@@ -319,19 +319,23 @@ LSQUnit::insert(const DynInstPtr &inst)
 
 // 573 New Code
 void 
-LSQUnit::clearSpecLines(const DynInstPtr &clearInst)
+LSQUnit::clearSpecLines(const DynInstPtr &clearInst){
+    RequestPtr req = std::make_shared<Request>(0, 1, Request::UNCACHEABLE,
+                                                cpu->dataRequestorId());
     //Packet(const PacketPtr &pkt, int specTag1, int specTag2, bool squash, bool clear)
     //create a new packet
-    PacketPtr new_pkt = new Packet(*request->packet(), clearInst->getSpecTag1(), clearInst->getSpecTag2(), false, true);
+    PacketPtr new_pkt = new Packet(req, MemCmd::SpecuCtrl, clearInst->getSpecTag1(), clearInst->getSpecTag2(), false, true);
     //sendTimingReq
     dcachePort->sendTimingReq(new_pkt);
 }
 
 void 
 LSQUnit::squashSpecLines(const DynInstPtr &squashInst){
+    RequestPtr req = std::make_shared<Request>(0, 1, Request::UNCACHEABLE,
+                                                cpu->dataRequestorId());
     //Packet(const PacketPtr &pkt, int specTag1, int specTag2, bool squash, bool clear)
     //create a new packet
-    PacketPtr new_pkt = new Packet(*request->packet(), clearInst->getSpecTag1(), clearInst->getSpecTag2(), true, false);
+    PacketPtr new_pkt = new Packet(req, MemCmd::SpecuCtrl, squashInst->getSpecTag1(), squashInst->getSpecTag2(), true, false);
     //sendTimingReq
     dcachePort->sendTimingReq(new_pkt);
 }
@@ -1097,7 +1101,6 @@ LSQUnit::storePostSend()
 
     storeWBIt++;
 }
-
 
 void
 LSQUnit::writeback(const DynInstPtr &inst, PacketPtr pkt)

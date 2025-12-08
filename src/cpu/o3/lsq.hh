@@ -883,6 +883,9 @@ class LSQ
      */
     void checkStaleTranslations();
 
+    void clearSpecLines(ThreadID tid, const DynInstPtr& inst);
+    void squashSpecLines(ThreadID tid, const DynInstPtr& inst);
+
     /**
      * Retry the previous send that failed.
      */

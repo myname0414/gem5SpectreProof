@@ -1147,6 +1147,22 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         } else {
             cmpAndSwap(blk, pkt);
         }
+    } else if (pkt->getFlagClear()) {
+        // 573 spec clear logic
+        if (pkt->getFlagSpecTag1()) {
+            clearAllSpecBit0();
+        }      
+        if (pkt->getFlagSpecTag2()) {
+            clearAllSpecBit1();
+        }  
+    } else if (pkt->getFlagSquash()) {
+        // 573 spec invalidate logic
+        if (pkt->getFlagSpecTag1()) {
+            invalidateAllSpecBit0();
+        }
+        if (pkt->getFlagSpecTag2()) {
+            invalidateAllSpecBit1();
+        }
     } else if (pkt->isWrite()) {
         // we have the block in a writable state and can go ahead,
         // note that the line may be also be considered writable in
@@ -1163,24 +1179,7 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         // this cache before knowing the store will fail.
         blk->setCoherenceBits(CacheBlk::DirtyBit);
         DPRINTF(CacheVerbose, "%s for %s (write)\n", __func__, pkt->print());
-    } 
-    else if (pkt->getFlagClear()) {
-        // 573 spec clear logic
-        if (pkt->getFlagSpecTag1()) {
-            clearAllSpecBit0();
-        }      
-        if (pkt->getFlagSpecTag2()) {
-            clearAllSpecBit1();
-        }  
-    } else if (pkt->getFlagSquash()) {
-        // 573 spec invalidate logic
-        if (pkt->getFlagSpecTag1()) {
-            invalidateAllSpecBit0();
-        }
-        if (pkt->getFlagSpecTag2()) {
-            invalidateAllSpecBit1();
-        }
-    } 
+    }
     else if (pkt->isRead()) {
         if (pkt->isLLSC()) {
             blk->trackLoadLocked(pkt);

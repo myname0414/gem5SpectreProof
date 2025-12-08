@@ -152,6 +152,7 @@ class MemCmd
         HTMAbort,
         // Tlb shootdown
         TlbiExtSync,
+        SpecuCtrl,
         NUM_MEM_CMDS
     };
 
@@ -979,18 +980,16 @@ class Packet : public Printable, public Extensible<Packet>
     }
 
         /**
-     * Constructor. Note that a Request object must be constructed
-     * first, but the Requests's physical address and size fields need
-     * not be valid. The command must be supplied.
+     * Constructor for squash and clear 
      */
-    Packet(const PacketPtr &pkt, int specTag1, int specTag2, bool squash, bool clear)
-        :  cmd(pkt->cmd), id(pkt->id), req(pkt->req),
-           data(nullptr), addr(pkt->addr), _isSecure(false), size(pkt->size),
-           _qosValue(pkt->_qosValue),
-           htmReturnReason(HtmCacheFailure::NO_FAIL),
-           htmTransactionUid(pkt->htmTransactionUid),
-           headerDelay(pkt->headerDelay), snoopDelay(pkt->snoopDelay),
-           payloadDelay(pkt->payloadDelay), senderState(NULL),
+    Packet(const RequestPtr &_req, MemCmd _cmd, int specTag1, int specTag2, bool squash, bool clear)
+        :  cmd(_cmd), id((PacketId)_req.get()), req(_req),
+        data(nullptr), addr(0), _isSecure(false), size(0),
+        _qosValue(0),
+        htmReturnReason(HtmCacheFailure::NO_FAIL),
+        htmTransactionUid(0),
+        headerDelay(0), snoopDelay(0),
+        payloadDelay(0), senderState(NULL),
            flag_specTag1(0),
            flag_specTag2(0),
            flag_clear(0),

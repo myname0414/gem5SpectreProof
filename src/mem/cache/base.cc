@@ -1240,13 +1240,13 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
     } else if (pkt->getFlagSquash()) {
         std::cout << " FlagSquash received in " << name() << std::endl;
         // 573 spec invalidate logic
-        //if (pkt->getFlagSpecTag1()) {
-        //    invalidateAllSpecBit0();
-        //}
-        //if (pkt->getFlagSpecTag2()) {
-        //    invalidateAllSpecBit1();
-        //}
-        invalidateAll();
+        if (pkt->getFlagSpecTag1()) {
+            invalidateAllSpecBit0();
+        }
+        if (pkt->getFlagSpecTag2()) {
+            invalidateAllSpecBit1();
+        }
+        //invalidateAll();
     } else if (pkt->isWrite()) {
         std::cout << " Write received in " << name() << std::endl;
         // we have the block in a writable state and can go ahead,

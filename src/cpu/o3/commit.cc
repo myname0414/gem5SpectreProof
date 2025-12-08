@@ -507,6 +507,8 @@ Commit::squashAll(ThreadID tid)
     toIEW->commitInfo[tid].robSquashing = true;
 
     toIEW->commitInfo[tid].mispredictInst = NULL;
+
+    // 573 Added to tell cache to either squash or clear based on branch result.
     toIEW->commitInfo[tid].squashInst = NULL;
     toIEW->commitInfo[tid].clearInst = NULL;
 
@@ -772,22 +774,14 @@ Commit::commit()
                     fromIEW->mispredictInst[tid]->pcState().instAddr(),
                     fromIEW->squashedSeqNum[tid]);
 
-                    //573 squash cache lines
-                    // Get the spec tags from the mispredicted instruction to figure out which lines to flush
-                    int tag1 = fromIEW->mispredictInst[tid]->getSpecTag1();
-                    int tag2 = fromIEW->mispredictInst[tid]->getSpecTag2();
+                //573 squash cache lines
+                // Get the spec tags from the mispredicted instruction to figure out which lines to flush
+                int tag1 = fromIEW->mispredictInst[tid]->getSpecTag1();
+                int tag2 = fromIEW->mispredictInst[tid]->getSpecTag2();
 
-                    // DynInstPtr head_inst;
-
-                    // ThreadID commit_thread = getCommittingThread();
-
-                    // head_inst = rob->readHeadInst(commit_thread);
-
-                    //if ((tag1 == 1|| tag2 == 1) && fromIEW->mispredictInst[tid]->isControl()) {
-                    toIEW->commitInfo[tid].squashSpecLines = true;
-                    
-                    //}
-
+                //if ((tag1 == 1|| tag2 == 1) && fromIEW->mispredictInst[tid]->isControl()) {
+                toIEW->commitInfo[tid].squashSpecLines = true;
+                
             } else {
                 DPRINTF(Commit,
                     "[tid:%i] Squashing due to order violation [sn:%llu]\n",
@@ -984,7 +978,7 @@ Commit::commitInsts()
                 stats.committedInstType[tid][head_inst->opClass()]++;
                 ppCommit->notify(head_inst);
 
-                // 573 branch clear
+                // 573 logic to send to cache to tell it it's a branch clear
                 if (head_inst->isControl()) {
                     toIEW->commitInfo[tid].clearSpecLines = true;
                     toIEW->commitInfo[tid].clearInst = head_inst;

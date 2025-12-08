@@ -284,10 +284,12 @@ Fetch::clearStates(ThreadID tid)
     fetchBufferValid[tid] = false;
     fetchQueue[tid].clear();
 
+    // 573 Clear speculative execution tracking info
     specBranch1[tid] = 0;
     specBranch2[tid] = 0;
     specBranch1SeqNum[tid] = 0;
     specBranch2SeqNum[tid] = 0;
+    
     // TODO not sure what to do with priorityList for now
     // priorityList.push_back(tid);
 
@@ -328,6 +330,7 @@ Fetch::resetStage()
 
         priorityList.push_back(tid);
 
+        // 573 Clear speculative execution tracking info
         specBranch1[tid] = 0;
         specBranch2[tid] = 0;
         specBranch1SeqNum[tid] = 0;
@@ -513,13 +516,13 @@ Fetch::lookupAndUpdateNextPC(const DynInstPtr &inst, PCStateBase &next_pc)
         inst->setPredTarg(next_pc);
         inst->setPredTaken(false);
 
-        //update the speculative tags based on whatevere happened previously
+        // 573 update the speculative tags based on whatevere happened previously
         inst->setSpecTag1(specBranch1[tid]);
         inst->setSpecTag2(specBranch2[tid]);
         return false;
     }
 
-    // update whether or not we're in a speculative state
+    // 573 update whether or not we're in a speculative state
     // if there is a nested branch need to stall
     if(specBranch2[tid]){
         //dont setPredTarg and predTake and advancePC like with non branch instr since you're not finishing the instr your stalling
@@ -527,18 +530,17 @@ Fetch::lookupAndUpdateNextPC(const DynInstPtr &inst, PCStateBase &next_pc)
         return false;
     }else if(specBranch1[tid]){ //there's only one branch can add a second nested branch
         specBranch2[tid] = 1;
-        specBranch2SeqNum[tid] = inst->seqNum; // need to remember what branch this is
+        specBranch2SeqNum[tid] = inst->seqNum; // keeps track of what branch this is
     }else{ //no branches say that this is the first branch
         specBranch1[tid] = 1;
-        specBranch1SeqNum[tid] = inst->seqNum; // need to remember what branch this is
+        specBranch1SeqNum[tid] = inst->seqNum; // keeps track of what branch this is
     }
 
-    // update the spec tags of the branch instruction
+    // 573 update the spec tags of the branch instruction
     inst->setSpecTag1(specBranch1[tid]);
     inst->setSpecTag2(specBranch2[tid]);
 
     predict_taken = branchPred->predict(inst->staticInst, inst->seqNum, next_pc, tid);
-
 
     if (predict_taken) {
         DPRINTF(Fetch, "[tid:%i] [sn:%llu] Branch at PC %#x "
@@ -964,7 +966,7 @@ Fetch::checkSignalsAndUpdate(ThreadID tid)
         DPRINTF(Fetch, "[tid:%i] Squashing instructions due to squash "
                 "from commit.\n",tid);
         
-        // clear speculative state on squash
+        // 573 clear speculative state on squash
         specBranch1[tid] = 0;
         specBranch2[tid] = 0;
         specBranch1SeqNum[tid] = 0;
@@ -996,12 +998,12 @@ Fetch::checkSignalsAndUpdate(ThreadID tid)
 
         InstSeqNum committed_sn = fromCommit->commitInfo[tid].doneSeqNum;
 
-        // Clear specBranch1 if that branch has committed
+        // 573 Clear specBranch1 if that branch has committed
         if (specBranch1[tid] && committed_sn >= specBranch1SeqNum[tid]) {
             specBranch1[tid] = 0;
         }
         
-        // Clear specBranch2 if that branch has committed
+        // 573 Clear specBranch2 if that branch has committed
         if (specBranch2[tid] && committed_sn >= specBranch2SeqNum[tid]) {
             specBranch2[tid] = 0;
         }
@@ -1012,7 +1014,7 @@ Fetch::checkSignalsAndUpdate(ThreadID tid)
         DPRINTF(Fetch, "[tid:%i] Squashing instructions due to squash "
                 "from decode.\n",tid);
 
-        //clear speculative state on squash from decode
+        // 573 clear speculative state on squash from decode
         specBranch1[tid] = 0;
         specBranch2[tid] = 0;
         specBranch1SeqNum[tid] = 0;
@@ -1200,7 +1202,8 @@ Fetch::fetch(bool &status_change)
         }
     } else {
 
-        // BranchStall gets set in function lookupAndUpdateNextPC if we're 2 branches deep
+        // 573 Stallign logic:
+        // BranchStall gets set in function lookupAndUpdateNextPC if we're 2 branches deep to tell it to stop speculatively executing
         if (fetchStatus[tid] == BranchStall) {
             if (!specBranch2[tid]) { // if the tags have emptied out we can start running again
                 fetchStatus[tid] = Running;

@@ -180,7 +180,7 @@ class Fetch
         IcacheWaitResponse,
         IcacheWaitRetry,
         IcacheAccessComplete,
-        BranchStall,
+        BranchStall, // 573 added to handle stalling when 2 branches deep for speculation
         NoGoodAddr
     };
 
@@ -531,11 +531,11 @@ class Fetch
     /** Event used to delay fault generation of translation faults */
     FinishTranslationEvent finishTranslationEvent;
 
-    // Flags whether we're in a speculative state or not
+    // 573 Flags whether we're in a speculative state or not
     int specBranch1[MaxThreads];
     int specBranch2[MaxThreads];
 
-    // Sequence number of branch that set specBranch
+    // 573 Sequence number of branch that set specBranch
     InstSeqNum specBranch1SeqNum[MaxThreads];
     InstSeqNum specBranch2SeqNum[MaxThreads];
 

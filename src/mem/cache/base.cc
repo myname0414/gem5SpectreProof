@@ -1190,6 +1190,7 @@ BaseCache::satisfyRequest(PacketPtr pkt, CacheBlk *blk, bool, bool)
         // all read responses have a data payload
         assert(pkt->hasRespData());
         pkt->setDataFromBlock(blk->data, blkSize);
+        // 573 Checks if the packet actually has the speculative bits flagged from the instruction
         if (pkt->getFlagSpecTag1() == 1) {\
             blk->setSpeculativeTag0();
         }
@@ -1515,6 +1516,7 @@ BaseCache::access(PacketPtr pkt, CacheBlk *&blk, Cycles &lat,
         maintainClusivity(pkt->fromCache(), blk);
 
         return true;
+        // 573 Code If it is a speculative memory command, go into the cache's satisfy request and set the cache blocks
     } else if (pkt->cmd == MemCmd::SpecuCtrl) {
         satisfyRequest(pkt, blk);
         return true;
@@ -1835,10 +1837,6 @@ BaseCache::memWriteback()
 {
     tags->forEachBlk([this](CacheBlk &blk) { writebackVisitor(blk); });
 }
-// have two clear functions for spec bit 1 and spec bit 2
-// check if specbit1 and 2 are high, if 1 is high, call function 1
-// else check if 2 is high, clear func 2
-// if (bit1 == 1)
 
 // NEW 573 CODE
 
@@ -1872,10 +1870,6 @@ BaseCache::invalidateAll() // Invalidates everything
     tags->forEachBlk([this](CacheBlk &blk) { invalidateSafe(blk); });
 }
 
-
-
-
-    
 void
 BaseCache::clearSpecBit0(CacheBlk &blk) 
 {

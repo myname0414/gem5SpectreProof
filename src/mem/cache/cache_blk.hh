@@ -234,7 +234,7 @@ class CacheBlk : public TaggedEntry
      */
     void clearCoherenceBits(unsigned bits) { coherence &= ~bits; }
 
-    /** 
+    /** NEW 573 Code
      * Check if Tag 0 is speculative
      */
     bool isSpeculativeTag0() {
@@ -352,7 +352,7 @@ class CacheBlk : public TaggedEntry
     /** Get the number of references to this block since insertion. */
     void increaseRefCount() { _refCount++; }
 
-    /**  Get the speculative bits. */
+    /**  573 Get the speculative bits. */
     bool getSpec0() { return _speculative_0; }
     bool getSpec1() { return _speculative_1; }
 
@@ -564,7 +564,7 @@ class CacheBlk : public TaggedEntry
     /** Whether this block is an unaccessed hardware prefetch. */
     bool _prefetched = 0;
     
-    // *new code* //
+    // 573 *new code* //
     bool _speculative_0 = false;
     bool _speculative_1 = false;
 };

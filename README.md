@@ -39,6 +39,8 @@ The complete list of options can be found in the build_opts directory.
 See https://www.gem5.org/documentation/general_docs/building for more
 information on building gem5.
 
+**Building Spectre on SpecuFlush**
+
 The next step in running SpecuFlush is to quickly check whether the Hello World program works. Run `build/X86/gem5.opt configs/learning_gem5/part1/two_level.py` and verify that the program runs successfully.
 
 In order to view a Spectre attack, you may need to re-compile the `spectre.c` file. Run `gcc spectre.c -o spectre -static` in the directory where you have cloned this repo into. Next, run `build/X86/gem5.opt configs/learning_gem5/part1/two_level.py spectre` in order to properly view the working Spectre defense. The output will be invalid characters. 

@@ -408,9 +408,10 @@ class Packet : public Printable, public Extensible<Packet>
     // Quality of Service priority value
     uint8_t _qosValue;
 
-    // Adding the speculative bits for the packet
+    // 573 Adding the speculative flags for the packet
     int flag_specTag1;
     int flag_specTag2;
+    // 573 Added the clear and mispredict/squashing flags for the packet
     int flag_clear;
     int flag_squash;
 
@@ -826,6 +827,7 @@ class Packet : public Printable, public Extensible<Packet>
 
     unsigned getSize() const  { assert(flags.isSet(VALID_SIZE)); return size; }
 
+    // 573 Helper functions to get the values of the flag bits - mainly used for the Cache interaction
     int getFlagSpecTag1()
     {
         return flag_specTag1;
@@ -898,6 +900,11 @@ class Packet : public Printable, public Extensible<Packet>
     }
 
     //OG packet constructor
+        /**
+     * Constructor. Note that a Request object must be constructed
+     * first, but the Requests's physical address and size fields need
+     * not be valid. The command must be supplied.
+     */
     Packet(const RequestPtr &_req, MemCmd _cmd)
         :  cmd(_cmd), id((PacketId)_req.get()), req(_req),
         data(nullptr), addr(0), _isSecure(false), size(0),
@@ -927,11 +934,7 @@ class Packet : public Printable, public Extensible<Packet>
         }
     }
 
-    /**
-     * Constructor. Note that a Request object must be constructed
-     * first, but the Requests's physical address and size fields need
-     * not be valid. The command must be supplied.
-     */
+    // 573 Created a new packet constructor for speculative loads to properly set the speculative tag bits
     Packet(const RequestPtr &_req, MemCmd _cmd, int specTag1, int specTag2)
         :  cmd(_cmd), id((PacketId)_req.get()), req(_req),
            data(nullptr), addr(0), _isSecure(false), size(0),
@@ -970,7 +973,7 @@ class Packet : public Printable, public Extensible<Packet>
             size = req->getSize();
             flags.set(VALID_SIZE);
         }
-
+        // 573 Code
         if (specTag1 == 1) {
             flag_specTag1 = 1;
         }
@@ -995,7 +998,6 @@ class Packet : public Printable, public Extensible<Packet>
            flag_clear(0),
            flag_squash(0)
     {
-        if (_cmd == MemCmd::SpecuCtrl) std::cout << " calling packet constr with memcmd " << std::endl;
         flags.clear();
         if (req->hasPaddr()) {
             addr = req->getPaddr();
@@ -1164,7 +1166,7 @@ class Packet : public Printable, public Extensible<Packet>
     static PacketPtr
     createRead(const RequestPtr &req, int specTag1 = 0, int specTag2 = 0)
     {
-        //std::cout << "creating read Packet" << std::endl;
+        // 573 When creating a packet, make sure it has the new speculative bits in it (reads are loads)
         return new Packet(req, makeReadCmd(req), specTag1, specTag2);
     }
 
@@ -1566,6 +1568,7 @@ class Packet : public Printable, public Extensible<Packet>
     }
 
     /**
+    573
      * Is this packet a clean invalidate request, e.g., clflush/clflushopt?
      */
     bool

@@ -62,7 +62,7 @@ void readMemoryByte(size_t malicious_x, uint8_t value[2], int score[2]) {
 
   for (i = 0; i < 256; i++)
     results[i] = 0;
-  for (tries = 5; tries > 0; tries--) {
+  for (tries = 20; tries > 0; tries--) {
 
     /* Flush array2[256*(0..255)] from cache */
     for (i = 0; i < 256; i++)

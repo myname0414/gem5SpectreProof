@@ -1,32 +1,27 @@
-# The gem5 Simulator
+# SpecuFlush
 
-This is the repository for the gem5 simulator. It contains the full source code
-for the simulator and all tests and regressions.
+This is the repository/branch for the SpecuFlush project. This contains all the code contained to stop a Spectre v1 attack within gem5. 
 
-The gem5 simulator is a modular platform for computer-system architecture
-research, encompassing system-level architecture as well as processor
-microarchitecture. It is primarily used to evaluate new hardware designs,
-system software changes, and compile-time and run-time system optimizations.
+SpecuFlush was created by a group of University of Michigan students for the EECS 573 Microarchitecture class. 
 
-The main website can be found at <http://www.gem5.org>.
+Authors: Biro Shin, Cameron Barbour, Dev Singhania, Lani Quach, Tong Sing Wu
 
-## Testing status
+## Spectre v1 Attack
 
-**Note**: These regard tests run on the develop branch of gem5:
-<https://github.com/gem5/gem5/tree/develop>.
+A Spectre v1 attack is an attack where speculative states of programs allow side-channels to exist, allowing for their exploitation. 
+This speculative execution in most modern day processors creates a security vulnerability. When a prediction for speculative execution is incorrect, the processor rolls back the architectural state. 
+However, the cache retains traces of this speculative execution, thus allowing secret data that shouldn't have been accessed to be leaked through Cache timing side-channels. 
 
-[![Daily Tests](https://github.com/gem5/gem5/actions/workflows/daily-tests.yaml/badge.svg?branch=develop)](https://github.com/gem5/gem5/actions/workflows/daily-tests.yaml)
-[![Weekly Tests](https://github.com/gem5/gem5/actions/workflows/weekly-tests.yaml/badge.svg?branch=develop)](https://github.com/gem5/gem5/actions/workflows/weekly-tests.yaml)
-[![Compiler Tests](https://github.com/gem5/gem5/actions/workflows/compiler-tests.yaml/badge.svg?branch=develop)](https://github.com/gem5/gem5/actions/workflows/compiler-tests.yaml)
+## Idea behind SpecuFlush
 
-## Getting started
+SpecuFlush was created to defend against Spectre v1 attacks by implementing a low architectural overhead solution. We add speculative branch tag bits into the cache in order to prevent speculative load data from being leaked. In normal operation, a speculative load occurs after we see a branch and continue to issue instructions. All the cache lines that are touched by a speculative load get marked. If a branch is correctly predicted and resolves, we clear the speculative bits from the cache. If a branch is mispredicted, we clear the speculative bits and invalidate the cache lines to prevent that data from being leaked. Currently, SpecuFlush supports up to 2 branches, but this can always be expanded to support deeper speculation. 
 
-A good starting point is <http://www.gem5.org/about>, and for
-more information about building the simulator and getting started
-please see <http://www.gem5.org/documentation> and
-<http://www.gem5.org/documentation/learning_gem5/introduction>.
+## Building SpecuFlush
 
-## Building gem5
+In order to build SpecuFlush, you must first build gem5. Please see the README within the gem5 repository <https://github.com/gem5/gem5> for more information if any issues arise during the build. 
+The following section is copied directly from the gem5 repository. We recommend building `scons build/X86/gem5.opt` as this implementation is done on the x86 ISA and processors. 
+
+**Building gem5**
 
 To build gem5, you will need the following software: g++ or clang,
 Python (gem5 links in the Python interpreter), SCons, zlib, m4, and lastly
@@ -44,56 +39,8 @@ The complete list of options can be found in the build_opts directory.
 See https://www.gem5.org/documentation/general_docs/building for more
 information on building gem5.
 
-## The Source Tree
+The next step in running SpecuFlush is to quickly check whether the Hello World program works. Run `build/X86/gem5.opt configs/learning_gem5/part1/two_level.py` and verify that the program runs successfully.
 
-The main source tree includes these subdirectories:
+In order to view a Spectre attack, you may need to re-compile the `spectre.c` file. Run `gcc spectre.c -o spectre -static` in the directory where you have cloned this repo into. Next, run `build/X86/gem5.opt configs/learning_gem5/part1/two_level.py spectre` in order to properly view the working Spectre defense. The output will be invalid characters. 
 
-* build_opts: pre-made default configurations for gem5
-* build_tools: tools used internally by gem5's build process.
-* configs: example simulation configuration scripts
-* ext: less-common external packages needed to build gem5
-* include: include files for use in other programs
-* site_scons: modular components of the build system
-* src: source code of the gem5 simulator. The C++ source, Python wrappers, and Python standard library are found in this directory.
-* system: source for some optional system software for simulated systems
-* tests: regression tests
-* util: useful utility programs and files
-
-## gem5 Resources
-
-To run full-system simulations, you may need compiled system firmware, kernel
-binaries and one or more disk images, depending on gem5's configuration and
-what type of workload you're trying to run. Many of these resources can be
-obtained from <https://resources.gem5.org>.
-
-More information on gem5 Resources can be found at
-<https://www.gem5.org/documentation/general_docs/gem5_resources/>.
-
-## Getting Help, Reporting bugs, and Requesting Features
-
-We provide a variety of channels for users and developers to get help, report
-bugs, requests features, or engage in community discussions. Below
-are a few of the most common we recommend using.
-
-* **GitHub Discussions**: A GitHub Discussions page. This can be used to start
-discussions or ask questions. Available at
-<https://github.com/orgs/gem5/discussions>.
-* **GitHub Issues**: A GitHub Issues page for reporting bugs or requesting
-features. Available at <https://github.com/gem5/gem5/issues>.
-* **Jira Issue Tracker**: A Jira Issue Tracker for reporting bugs or requesting
-features. Available at <https://gem5.atlassian.net/>.
-* **Slack**: A Slack server with a variety of channels for the gem5 community
-to engage in a variety of discussions. Please visit
-<https://www.gem5.org/join-slack> to join.
-* **gem5-users@gem5.org**: A mailing list for users of gem5 to ask questions
-or start discussions. To join the mailing list please visit
-<https://www.gem5.org/mailing_lists>.
-* **gem5-dev@gem5.org**: A mailing list for developers of gem5 to ask questions
-or start discussions. To join the mailing list please visit
-<https://www.gem5.org/mailing_lists>.
-
-## Contributing to gem5
-
-We hope you enjoy using gem5. When appropriate we advise sharing your
-contributions to the project. <https://www.gem5.org/contributing> can help you
-get started. Additional information can be found in the CONTRIBUTING.md file.
+If the program takes too long to run on your machine, please go into the `spectre.c` file and change `for (tries = 20; tries > 0; tries--)` so that the `tries=20` is a smaller value. Smaller values for tries will usually run faster, but can also cause issues on some machines.
